@@ -1,4 +1,4 @@
-@prefix :      <test001.csv#> .
+@prefix :      <http://www.w3.org/2013/csvw/tests/test001.csv#> .
 @prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix owl:   <http://www.w3.org/2002/07/owl#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
@@ -8,11 +8,11 @@
 [ a           csvw:TableGroup ;
   csvw:table  [ a         csvw:Table ;
                 csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Flanders" ;
-                                              :Surname     "Ned"
+                            csvw:describes  [ :FamilyName  "Simpson" ;
+                                              :Surname     "Bart"
                                             ] ;
-                            csvw:rownum     "6" ;
-                            csvw:url        "test001.csv#row=7"
+                            csvw:rownum     "3" ;
+                            csvw:url        "test001.csv#row=4"
                           ] ;
                 csvw:row  [ a               csvw:Row ;
                             csvw:describes  [ :FamilyName  "Simpson" ;
@@ -20,6 +20,20 @@
                                             ] ;
                             csvw:rownum     "5" ;
                             csvw:url        "test001.csv#row=6"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ :FamilyName  "Simpson" ;
+                                              :Surname     "Marge"
+                                            ] ;
+                            csvw:rownum     "2" ;
+                            csvw:url        "test001.csv#row=3"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ :FamilyName  "Smithers" ;
+                                              :Surname     "Waylon"
+                                            ] ;
+                            csvw:rownum     "8" ;
+                            csvw:url        "test001.csv#row=9"
                           ] ;
                 csvw:row  [ a               csvw:Row ;
                             csvw:describes  [ :FamilyName  "Simpson" ;
@@ -36,25 +50,11 @@
                             csvw:url        "test001.csv#row=8"
                           ] ;
                 csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Simpson" ;
-                                              :Surname     "Marge"
+                            csvw:describes  [ :FamilyName  "Flanders" ;
+                                              :Surname     "Ned"
                                             ] ;
-                            csvw:rownum     "2" ;
-                            csvw:url        "test001.csv#row=3"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Simpson" ;
-                                              :Surname     "Bart"
-                                            ] ;
-                            csvw:rownum     "3" ;
-                            csvw:url        "test001.csv#row=4"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Smithers" ;
-                                              :Surname     "Waylon"
-                                            ] ;
-                            csvw:rownum     "8" ;
-                            csvw:url        "test001.csv#row=9"
+                            csvw:rownum     "6" ;
+                            csvw:url        "test001.csv#row=7"
                           ] ;
                 csvw:row  [ a               csvw:Row ;
                             csvw:describes  [ :FamilyName  "Simpson" ;
