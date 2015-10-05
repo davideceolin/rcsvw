@@ -3,7 +3,7 @@ library("RCurl")
 library("rjson")
 
 init<-function(){
-  store <<- new.rdf()
+  store <<- new.rdf(FALSE)
   add.prefix(store,prefix="csvw",namespace="http://www.w3.org/ns/csvw#")
   add.prefix(store,prefix="rdf",namespace="http://www.w3.org/1999/02/22-rdf-syntax-ns#")
   add.prefix(store,prefix="xsd",namespace="http://www.w3.org/2001/XMLSchema#")
@@ -31,9 +31,9 @@ row2json<-function(index,url,data){
 
 csv2rdf<-function(url,output="text"){
   init()
-  add.prefix(store,prefix="",namespace=paste(url,"#",sep=""))
   data <- read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE,stringsAsFactors = FALSE)
   url <- tail(unlist(strsplit(url,"/")),n=1)
+  add.prefix(store,prefix="",namespace=paste(url,"#",sep=""))
   tg1 <- create.blankNode(store)
   add.triple(store,tg1,rdf_type,csvw_tablegroup)
   tb1 <- create.blankNode(store)
