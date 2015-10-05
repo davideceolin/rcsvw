@@ -67,8 +67,10 @@ row2rdf<-function(index,url,data,tb){
 }
 
 rowdescribes <- function(i,data,index,desc,url){
-  p<-create.property(store,paste(url,"#",colnames(data)[i],sep=""));
-  add.triple(store,desc,p,as.character(data[index,i]))
+  if(!is.null(data[index,i]) & !is.na(data[index,i])>0){
+    p<-create.property(store,paste(url,"#",colnames(data)[i],sep=""));
+    add.triple(store,desc,p,as.character(data[index,i]))
+  }
 }
 
 #csv2rdf("http://www.w3.org/2013/csvw/tests/test001.csv",output = "file")
