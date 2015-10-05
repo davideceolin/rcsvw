@@ -26,7 +26,7 @@ csv2json<-function(url){
 
 row2json<-function(index,url,data){
   row = data[index,][,!is.na(data[index,])]
-  list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=c(row))
+  list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=as.list(setNames(colnames(row),row)))
 }
 
 csv2rdf<-function(url,output="text"){
@@ -60,13 +60,13 @@ row2rdf<-function(index,url,data,tb){
   add.triple(store,rowrdf,rdf_type,csvw_Row)
   desc <- create.blankNode(store)
   add.triple(store,rowrdf,csvw_describes,desc)
-  lapply(seq(1,ncol(data)),rowdescribes,data,index,desc,url)
+  lapply(seq(1,ncol(data)),rowdescribesrdf,data,index,desc,url)
   add.triple(store,rowrdf,csvw_rownum,index)
   add.triple(store,rowrdf,csvw_url,paste(url,"#row=",strtoi(index)+1,sep=""))
   add.triple(store,tb,csvw_row,rowrdf)
 }
 
-rowdescribes <- function(i,data,index,desc,url){
+rowdescribesrdf <- function(i,data,index,desc,url){
   if(!is.null(data[index,i]) & !is.na(data[index,i])>0){
     p<-create.property(store,paste(url,"#",colnames(data)[i],sep=""));
     add.triple(store,desc,p,as.character(data[index,i]))
