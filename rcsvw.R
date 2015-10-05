@@ -42,7 +42,9 @@ csv2rdf<-function(url,output="text"){
   if(output=="text"){
     dump.rdf(store)
   }else if(output=="file"){
-    save.rdf(url)
+    fn<-strsplit(url,".",fixed=TRUE)[[1]][1]
+    fn<-paste(fn,".ttl",sep="")
+    save.rdf(store,x,format="TURTLE")
     print ("file saved")
   }else if(output=="store"){
     store
@@ -67,4 +69,4 @@ rowdescribes <- function(i,data,index,desc){
   add.triple(store,desc,p,as.character(data[index,i]))
 }
 
-csv2rdf("http://www.w3.org/2013/csvw/tests/test001.csv")
+csv2rdf("http://www.w3.org/2013/csvw/tests/test001.csv",output = "file")
