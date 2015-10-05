@@ -18,20 +18,21 @@ init<-function(){
   csvw_row <<- create.property(store,"http://www.w3.org/ns/csvw#row")
 }
 csv2json<-function(url){
-  result <- read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE)
+  result <- read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE,stringsAsFactors = TRUE)
   result <- lapply(rownames(result),row2json,url,result)
   res <- list(tables=list(list(url=url,row=result)))
   toJSON(res)
 }
 
 row2json<-function(index,url,data){
-  row = data[index,][,!is.na(data[index,])]
-  list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=as.list(setNames(colnames(row),row)))
+  row = lapply(data[index,][,!is.na(data[index,])],as.character)
+  print(row)
+  list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
 
 csv2rdf<-function(url,output="text"){
   init()
-  data <- read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE,stringsAsFactors = FALSE)
+  data <- read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE)
   url <- tail(unlist(strsplit(url,"/")),n=1)
   add.prefix(store,prefix="",namespace=paste(url,"#",sep=""))
   tg1 <- create.blankNode(store)
