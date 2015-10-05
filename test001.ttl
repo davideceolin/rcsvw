@@ -8,60 +8,60 @@
 [ a           csvw:TableGroup ;
   csvw:table  [ a         csvw:Table ;
                 csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Simpson" ;
-                                              :Surname     "Lisa"
-                                            ] ;
-                            csvw:rownum     "4" ;
-                            csvw:url        "test001.csv#row=5"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Simpson" ;
-                                              :Surname     "Bart"
-                                            ] ;
-                            csvw:rownum     "3" ;
-                            csvw:url        "test001.csv#row=4"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Simpson" ;
-                                              :Surname     "Marge"
-                                            ] ;
-                            csvw:rownum     "2" ;
-                            csvw:url        "test001.csv#row=3"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Simpson" ;
-                                              :Surname     "Homer"
-                                            ] ;
-                            csvw:rownum     "1" ;
-                            csvw:url        "test001.csv#row=2"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Smithers" ;
-                                              :Surname     "Waylon"
-                                            ] ;
-                            csvw:rownum     "8" ;
-                            csvw:url        "test001.csv#row=9"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Simpson" ;
-                                              :Surname     "Maggie"
-                                            ] ;
-                            csvw:rownum     "5" ;
-                            csvw:url        "test001.csv#row=6"
-                          ] ;
-                csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "the Clown" ;
-                                              :Surname     "Krusty"
+                            csvw:describes  [ <test001.csv#FamilyName>  "the Clown" ;
+                                              <test001.csv#Surname>     "Krusty"
                                             ] ;
                             csvw:rownum     "7" ;
                             csvw:url        "test001.csv#row=8"
                           ] ;
                 csvw:row  [ a               csvw:Row ;
-                            csvw:describes  [ :FamilyName  "Flanders" ;
-                                              :Surname     "Ned"
+                            csvw:describes  [ <test001.csv#FamilyName>  "Simpson" ;
+                                              <test001.csv#Surname>     "Bart"
+                                            ] ;
+                            csvw:rownum     "3" ;
+                            csvw:url        "test001.csv#row=4"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ <test001.csv#FamilyName>  "Flanders" ;
+                                              <test001.csv#Surname>     "Ned"
                                             ] ;
                             csvw:rownum     "6" ;
                             csvw:url        "test001.csv#row=7"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ <test001.csv#FamilyName>  "Simpson" ;
+                                              <test001.csv#Surname>     "Maggie"
+                                            ] ;
+                            csvw:rownum     "5" ;
+                            csvw:url        "test001.csv#row=6"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ <test001.csv#FamilyName>  "Simpson" ;
+                                              <test001.csv#Surname>     "Homer"
+                                            ] ;
+                            csvw:rownum     "1" ;
+                            csvw:url        "test001.csv#row=2"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ <test001.csv#FamilyName>  "Simpson" ;
+                                              <test001.csv#Surname>     "Lisa"
+                                            ] ;
+                            csvw:rownum     "4" ;
+                            csvw:url        "test001.csv#row=5"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ <test001.csv#FamilyName>  "Smithers" ;
+                                              <test001.csv#Surname>     "Waylon"
+                                            ] ;
+                            csvw:rownum     "8" ;
+                            csvw:url        "test001.csv#row=9"
+                          ] ;
+                csvw:row  [ a               csvw:Row ;
+                            csvw:describes  [ <test001.csv#FamilyName>  "Simpson" ;
+                                              <test001.csv#Surname>     "Marge"
+                                            ] ;
+                            csvw:rownum     "2" ;
+                            csvw:url        "test001.csv#row=3"
                           ] ;
                 csvw:url  "test001.csv"
               ]
