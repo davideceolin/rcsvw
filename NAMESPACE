@@ -1,1 +1,1 @@
-exportPattern("^[^\\.]")
+exportPattern(store, csvw_describes, csvw_Table, csvw_tablegroup, rdf_type, csvw_Row, csvw_rownum, csvw_url, csvw_table, csvw_row, csv2rdf, csv2json)

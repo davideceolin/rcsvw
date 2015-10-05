@@ -1,6 +1,6 @@
-require("rrdf")
-require("RCurl")
-require("rjson")
+library("rrdf")
+library("RCurl")
+library("rjson")
 
 store <- new.rdf()
 add.prefix(store,prefix="csvw",namespace="http://www.w3.org/ns/csvw#")
@@ -37,7 +37,7 @@ csv2rdf<-function(url,output="text"){
   tb1 <- create.blankNode(store)
   add.triple(store,tb1,rdf_type,csvw_Table)
   add.triple(store,tg1,csvw_table,tb1)
-  lapply(rownames(data),row2csv,url,data,tb1)
+  lapply(rownames(data),row2rdf,url,data,tb1)
   add.triple(store,tb1,csvw_url,url)
   if(output=="text"){
     dump.rdf(store)
@@ -52,7 +52,7 @@ csv2rdf<-function(url,output="text"){
   
 }
 
-row2csv<-function(index,url,data,tb){
+row2rdf<-function(index,url,data,tb){
   row = data[index,][,!is.na(data[index,])]
   rowrdf <- create.blankNode(store)
   add.triple(store,rowrdf,rdf_type,csvw_Row)
