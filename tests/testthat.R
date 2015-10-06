@@ -75,3 +75,15 @@ test_that("test009json", {
   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test009.json",.opts=curlOptions(followlocation=TRUE)))           
   expect_equal(s1,s2)
 })
+
+test_that("test010rdf", {
+  s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test010.csv",output = "store")
+  s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test010.ttl",.opts=curlOptions(followlocation=TRUE)) ,format="TURTLE")             
+  expect_equal(s1,s2)
+})
+
+test_that("test010json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test010.csv"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test010.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
