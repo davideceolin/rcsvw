@@ -74,4 +74,62 @@ rowdescribesrdf <- function(i,data,index,desc,url){
   }
 }
 
+getMetadata<-function(url){
+  metadata<-fromJSON(getURL(paste(url,"-metadata.json")))
+}
+
+tabular <- function(url,rownum,primaryKey,aboutUrl,tableSchema,context)
+{
+  thisEnv <- environment()
+  url <- url
+  rownum <- rownum
+  primaryKey<-primaryKey
+  aboutUrl<-aboutUrl
+  context<-context
+  if(is.null(tableSchema)){
+    
+  }else{
+    tableSchema<-tableSchema
+  }
+  
+  me <- list(
+    thisEnv = thisEnv,
+    getEnv = function()
+    {
+      return(get("thisEnv",thisEnv))
+    },
+    
+    getrownum = function()
+    {
+      return(get("rownum",thisEnv))
+    },
+    
+    setrownum = function(value)
+    {
+      return(assign("rownum",value,thisEnv))
+    },
+    
+    
+    getaboutUrl = function()
+    {
+      return(get("aboutUrl",thisEnv))
+    },
+    
+    setaboutUrl = function(value)
+    {
+      return(assign("aboutUrl",value,thisEnv))
+    }
+    
+  )
+  
+  ## Define the value of the list within the current environment.
+  assign('this',me,envir=thisEnv)
+  
+  ## Set the name for the class
+  class(me) <- append(class(me),"tabular")
+  return(me)
+}
+
+
+
 #csv2rdf("http://www.w3.org/2013/csvw/tests/test001.csv",output = "file")
