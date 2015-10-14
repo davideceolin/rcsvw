@@ -78,58 +78,66 @@ getMetadata<-function(url){
   metadata<-fromJSON(getURL(paste(url,"-metadata.json")))
 }
 
-tabular <- function(url,rownum,primaryKey,aboutUrl,tableSchema,context)
-{
-  thisEnv <- environment()
-  url <- url
-  rownum <- rownum
-  primaryKey<-primaryKey
-  aboutUrl<-aboutUrl
-  context<-context
-  if(is.null(tableSchema)){
-    
-  }else{
-    tableSchema<-tableSchema
-  }
-  
-  me <- list(
-    thisEnv = thisEnv,
-    getEnv = function()
-    {
-      return(get("thisEnv",thisEnv))
-    },
-    
-    getrownum = function()
-    {
-      return(get("rownum",thisEnv))
-    },
-    
-    setrownum = function(value)
-    {
-      return(assign("rownum",value,thisEnv))
-    },
-    
-    
-    getaboutUrl = function()
-    {
-      return(get("aboutUrl",thisEnv))
-    },
-    
-    setaboutUrl = function(value)
-    {
-      return(assign("aboutUrl",value,thisEnv))
-    }
-    
+setClass (" tabularModel ",
+          representation ( tabular ="data.frame")# ,
+          #prototype ( size = integer (2) ,
+          #            cellres =c (1 ,1) ,
+          #            bbox = numeric (4))
+          )
+
+tabularModel<-function(url=NA_character_){
+  new("tabularModel",url=url)
+}
+
+setClass(
+  Class = "Tabular",
+  representation = representation(
+    url = "character",
+    row = "data.frame",
+    meta = "list"
   )
-  
-  ## Define the value of the list within the current environment.
-  assign('this',me,envir=thisEnv)
-  
-  ## Set the name for the class
-  class(me) <- append(class(me),"tabular")
-  return(me)
+)
+
+Tabular<-function(url=NA,row=NA,meta=NA){
+  row<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE)
+  if(url.exists(paste(url,"-metadata.json",sep=""))){
+    metadata<-fromJSON(getURL(paste(url,"-metadata.json",sep=""),.opts=curlOptions(followlocation=TRUE)))
+    colnames(row)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
+    m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
+    id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
+    row[,"url"]<-sapply(as.vector(row[[id]]),function(x) paste(url,gsub(paste("\\{",id,"\\}",sep=""),x,s),sep=""))
+    meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
+  }else{
+    url <- tail(unlist(strsplit(url,"/")),n=1)
+    row[,"url"]<-lapply(seq(1,nrow(row)),function(x)paste(url,"#row=",strtoi(x)+1,sep=""))
+  }
+  new("Tabular",url=url,row=row)
+}
+
+clean <-function(x){
+  lapply(x,function(y){
+    if(!is.null(names(y)) && names(y)=="@id")
+      y$"@id"
+    else if(!is.null(names(y)) && "@value" %in% names(y)){
+      y$"@value"
+    }else 
+      y
+  })
 }
 
 
-
 #csv2rdf("http://www.w3.org/2013/csvw/tests/test001.csv",output = "file")
+#getrownum = function(){return(get("rownum",thisEnv))},
+
+#setrownum = function(value)
+#{
+#  return(assign("rownum",value,thisEnv))
+#},
+#getaboutUrl = function()
+#{
+#  return(get("aboutUrl",thisEnv))
+#},
+#setaboutUrl = function(value)
+#{
+#  return(assign("aboutUrl",value,thisEnv))
+#}
