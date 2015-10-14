@@ -111,18 +111,18 @@ Tabular<-function(url=NA,row=NA,meta=NA){
     url <- tail(unlist(strsplit(url,"/")),n=1)
     row[,"url"]<-lapply(seq(1,nrow(row)),function(x)paste(url,"#row=",strtoi(x)+1,sep=""))
   }
-  new("Tabular",url=url,row=row)
+  new("Tabular",url=url,row=row,meta=meta)
 }
 
-clean <-function(x){
-  lapply(x,function(y){
+clean <-function(y){
     if(!is.null(names(y)) && names(y)=="@id")
       y$"@id"
     else if(!is.null(names(y)) && "@value" %in% names(y)){
       y$"@value"
-    }else 
+    }else if(class(y) == "list")
+      lapply(y,clean)
+    else
       y
-  })
 }
 
 
