@@ -87,3 +87,9 @@ test_that("test010json", {
   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test010.json",.opts=curlOptions(followlocation=TRUE)))           
   expect_equal(s1,s2)
 })
+
+test_that("test011json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test011/tree-ops.csv"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test011/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
