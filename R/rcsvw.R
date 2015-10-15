@@ -10,7 +10,6 @@ setClass(
     meta = "list")
 )
 
-
 Tabular<-function(url=NA){
   table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE,stringsAsFactors = FALSE)
   if(url.exists(paste(url,"-metadata.json",sep=""))){
@@ -57,7 +56,7 @@ init<-function(){
 csv2json<-function(url){
   tb<-Tabular(url)
   if(length(tb@meta)>0){
-    toJSON(list(tables=list(list(url=tb@url,row=tb@tables,tb@meta))))
+    toJSON(list(tables=list(append(list(url=tb@url,row=tb@tables),tb@meta))))
   }else{
     toJSON(list(tables=list(list(url=tb@url,row=tb@tables))))
   }
