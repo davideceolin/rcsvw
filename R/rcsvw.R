@@ -17,8 +17,8 @@ Tabular<-function(url=NA){
     colnames(table)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
     m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
     id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
+    table[,"@id"]<-sapply(as.vector(table[[id]]),function(x) paste(url,gsub(paste("\\{",id,"\\}",sep=""),x,s),sep=""))
     table<-lapply(rownames(table),row2json,url,table)
-    #row[["describes"]][,"@id"]<-sapply(as.vector(row$describes[[id]]),function(x) paste(url,gsub(paste("\\{",id,"\\}",sep=""),x,s),sep=""))
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
     table<-lapply(rownames(table),row2json,url,table)
@@ -55,11 +55,7 @@ init<-function(){
 }
 csv2json<-function(url){
   tb<-Tabular(url)
-  if(length(tb@meta)>0){
-    toJSON(list(tables=list(append(list(url=tb@url,row=tb@tables),tb@meta))))
-  }else{
-    toJSON(list(tables=list(list(url=tb@url,row=tb@tables))))
-  }
+  toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb@tables)))))
 }
 
 row2json<-function(index,url,data){
