@@ -20,7 +20,7 @@ Tabular<-function(url=NA){
     n<-colnames(table)
     table<-as.data.frame(lapply(colnames(table),format_column,table,metadata))
     colnames(table)<-n
-    ids<-sapply(as.vector(table[[id]]),function(x) paste(url,gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
+    ids<-sapply(as.vector(table[[id]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
     table<- cbind("@id"=ids,table)
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
@@ -58,6 +58,8 @@ init<-function(){
   add.prefix(store,prefix="csvw",namespace="http://www.w3.org/ns/csvw#")
   add.prefix(store,prefix="rdf",namespace="http://www.w3.org/1999/02/22-rdf-syntax-ns#")
   add.prefix(store,prefix="xsd",namespace="http://www.w3.org/2001/XMLSchema#")
+  add.prefix(store,prefix="dc",namespace="http://purl.org/dc/terms/")
+  add.prefix(store,prefix="dcat",namespace="http://www.w3.org/ns/dcat#")
   csvw_describes <<- create.property(store,"http://www.w3.org/ns/csvw#describes")
   csvw_Table <<- create.resource(store,"http://www.w3.org/ns/csvw#Table")
   csvw_tablegroup <<- create.resource(store,"http://www.w3.org/ns/csvw#TableGroup")
@@ -70,8 +72,8 @@ init<-function(){
 }
 csv2json<-function(url){
   tb<-Tabular(url)
-  tb1<-lapply(rownames(tb@tables[[1]]),row2json,url,tb@tables[[1]])
-  print(tb1)
+  if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
+  tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]])
   toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1)))))
 }
 
@@ -80,18 +82,20 @@ row2json<-function(index,url,data){
   list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
 
-csv2rdf<-function(url,output="text"){
+csv2rdf<-function(url,output="store"){
   init()
-  data <- read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE)
-  url <- tail(unlist(strsplit(url,"/")),n=1)
-  add.prefix(store,prefix="",namespace=paste(url,"#",sep=""))
+  tb<-Tabular(url)
+  tb@url <- tail(unlist(strsplit(url,"/")),n=1)
+  if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
+  #tb@url <- paste(tb@url,"#",sep="")
+  add.prefix(store,prefix="",namespace=paste(tb@url,"#",sep=""))
   tg1 <- create.blankNode(store)
   add.triple(store,tg1,rdf_type,csvw_tablegroup)
   tb1 <- create.blankNode(store)
-  add.triple(store,tb1,rdf_type,csvw_Table)
   add.triple(store,tg1,csvw_table,tb1)
-  lapply(rownames(data),row2rdf,url,data,tb1)
-  add.triple(store,tb1,csvw_url,url)
+  add.triple(store,tb1,rdf_type,csvw_Table)
+  lapply(rownames(tb@tables[[1]]),row2rdf,tb@url,tb@tables[[1]],tb1)
+  add.triple(store,tb1,csvw_url,tb@url)
   if(output=="text"){
     dump.rdf(store)
   }else if(output=="file"){
@@ -106,9 +110,13 @@ csv2rdf<-function(url,output="text"){
 
 row2rdf<-function(index,url,data,tb){
   row = data[index,][,!is.na(data[index,])]
+  if("@id" %in% colnames(row)){
+    desc <- create.resource(store,as.character(row[1]))
+  }else{
+    desc <- create.blankNode(store)
+  }
   rowrdf <- create.blankNode(store)
   add.triple(store,rowrdf,rdf_type,csvw_Row)
-  desc <- create.blankNode(store)
   add.triple(store,rowrdf,csvw_describes,desc)
   lapply(seq(1,ncol(data)),rowdescribesrdf,data,index,desc,url)
   add.triple(store,rowrdf,csvw_rownum,index)
