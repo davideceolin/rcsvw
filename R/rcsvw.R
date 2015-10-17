@@ -1,6 +1,7 @@
 library("rrdf")
 library("RCurl")
 library("rjson")
+library("httr")
 
 setClass(
   Class = "Tabular",
@@ -12,8 +13,17 @@ setClass(
 
 Tabular<-function(url=NA){
   table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE,stringsAsFactors = FALSE)
+  metadata_file<-NULL
+  http_header<-GET(url)
   if(url.exists(paste(url,"-metadata.json",sep=""))){
-    metadata<-fromJSON(getURL(paste(url,"-metadata.json",sep=""),.opts=curlOptions(followlocation=TRUE)))
+    metadata_file<-paste(url,"-metadata.json",sep="")
+  }else if(url.exists(paste(url,"csv-metadata.json",sep=""))){
+    metadata_file<-
+  }else if("Link" %in% names(http_header)){
+    metadata_file<-http_header$Link
+  }
+  if(!is.null(metadata_file)){
+    metadata<-fromJSON(getURL(metadata_file),.opts=curlOptions(followlocation=TRUE)))
     colnames(table)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
     m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
     id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
