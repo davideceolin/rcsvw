@@ -17,7 +17,11 @@ Tabular<-function(url=NA){
     colnames(table)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
     m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
     id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
-    table[,"@id"]<-sapply(as.vector(table[[id]]),function(x) paste(url,gsub(paste("\\{",id,"\\}",sep=""),x,s),sep=""))
+    n<-colnames(table)
+    table<-as.data.frame(lapply(colnames(table),format_column,table,metadata))
+    colnames(table)<-n
+    ids<-sapply(as.vector(table[[id]]),function(x) paste(url,gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
+    table<- cbind("@id"=ids,table)
     table<-lapply(rownames(table),row2json,url,table)
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
@@ -36,6 +40,19 @@ clean <-function(y){
     lapply(y,clean)
   else
     y
+}
+
+format_column<-function(col_name,table,metadata){
+  index<-sapply(metadata$tableSchema$columns,function(y){y$name==col_name})
+  datatype<-metadata$tableSchema$columns[index][[1]]$datatype
+  if(!is.atomic(datatype) && datatype$base=="date"){
+    R_format<-gsub("yyyy","Y",datatype$format,perl=TRUE)
+    R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
+    d<-lapply(table[,col_name],function(y) as.Date(y,format=R_format))
+    R_format<-gsub("M","m",R_format,perl=TRUE)
+    unlist(lapply(table[,col_name],function(y) as.character(as.Date(y,format=R_format))))
+  }else
+    table[,col_name]
 }
 
 init<-function(){
@@ -62,6 +79,8 @@ row2json<-function(index,url,data){
   row = lapply(data[index,][,!is.na(data[index,])],as.character)
   list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
+
+
 
 csv2rdf<-function(url,output="text"){
   init()
