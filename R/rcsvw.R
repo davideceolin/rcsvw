@@ -22,13 +22,11 @@ Tabular<-function(url=NA){
     colnames(table)<-n
     ids<-sapply(as.vector(table[[id]]),function(x) paste(url,gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
     table<- cbind("@id"=ids,table)
-    table<-lapply(rownames(table),row2json,url,table)
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
-    table<-lapply(rownames(table),row2json,url,table)
     meta<-list()
   }
-  new("Tabular",url=url,tables=table,meta=meta)
+  new("Tabular",url=url,tables=list(table),meta=meta)
 }
 
 clean <-function(y){
@@ -72,15 +70,15 @@ init<-function(){
 }
 csv2json<-function(url){
   tb<-Tabular(url)
-  toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb@tables)))))
+  tb1<-lapply(rownames(tb@tables[[1]]),row2json,url,tb@tables[[1]])
+  print(tb1)
+  toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1)))))
 }
 
 row2json<-function(index,url,data){
   row = lapply(data[index,][,!is.na(data[index,])],as.character)
   list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
-
-
 
 csv2rdf<-function(url,output="text"){
   init()
