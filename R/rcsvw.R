@@ -11,11 +11,13 @@ setClass(
     meta = "list")
 )
 
-Tabular<-function(url=NA){
+Tabular<-function(url=NA,metadata_param=NULL){
   table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F)
   metadata_file<-NULL
   http_header<-GET(url)
-  if(url.exists(paste(url,"-metadata.json",sep=""))){
+  if(!is.null(metadata_param)){
+    metadata_file<-metadata_param
+  }else if(url.exists(paste(url,"-metadata.json",sep=""))){
     metadata_file<-paste(url,"-metadata.json",sep="")
   }else if(url.exists(gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url))){
     metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url)
@@ -84,8 +86,8 @@ init<-function(){
   csvw_table <<- create.property(store,"http://www.w3.org/ns/csvw#table")
   csvw_row <<- create.property(store,"http://www.w3.org/ns/csvw#row")
 }
-csv2json<-function(url){
-  tb<-Tabular(url)
+csv2json<-function(url,metadata=NULL){
+  tb<-Tabular(url,metadata)
   if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
   tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]])
   toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1)))))
@@ -96,9 +98,9 @@ row2json<-function(index,url,data){
   list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
 
-csv2rdf<-function(url,output="store"){
+csv2rdf<-function(url,metadata=NULL,output="store"){
   init()
-  tb<-Tabular(url)
+  tb<-Tabular(url,metadata)
   tb@url <- tail(unlist(strsplit(url,"/")),n=1)
   if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
   #tb@url <- paste(tb@url,"#",sep="")
