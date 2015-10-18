@@ -12,26 +12,28 @@ setClass(
 )
 
 Tabular<-function(url=NA){
-  table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=TRUE)),check.names=FALSE,stringsAsFactors = FALSE)
+  table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F)
   metadata_file<-NULL
   http_header<-GET(url)
   if(url.exists(paste(url,"-metadata.json",sep=""))){
     metadata_file<-paste(url,"-metadata.json",sep="")
-  }else if(url.exists(paste(url,"csv-metadata.json",sep=""))){
-    metadata_file<-
+  }else if(url.exists(gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url))){
+    metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url)
   }else if("Link" %in% names(http_header)){
     metadata_file<-http_header$Link
   }
   if(!is.null(metadata_file)){
-    metadata<-fromJSON(getURL(metadata_file),.opts=curlOptions(followlocation=TRUE)))
+    metadata<-fromJSON(getURL(metadata_file,.opts=curlOptions(followlocation=TRUE)))
     colnames(table)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
-    m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
-    id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
     n<-colnames(table)
     table<-as.data.frame(lapply(colnames(table),format_column,table,metadata))
     colnames(table)<-n
-    ids<-sapply(as.vector(table[[id]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
-    table<- cbind("@id"=ids,table)
+    if("aboutUrl" %in% names(metadata$tableSchema)){
+      ids<-sapply(as.vector(table[[id]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
+      m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
+      id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
+      table<- cbind("@id"=ids,table)
+    }
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
     meta<-list()
@@ -40,6 +42,7 @@ Tabular<-function(url=NA){
 }
 
 clean <-function(y){
+  if(length(y)>0){
   if(!is.null(names(y)) && names(y)=="@id")
     y$"@id"
   else if(!is.null(names(y)) && "@value" %in% names(y)){
@@ -47,7 +50,8 @@ clean <-function(y){
   }else if(class(y) == "list")
     lapply(y,clean)
   else
-    y
+    y}else
+      y
 }
 
 format_column<-function(col_name,table,metadata){
