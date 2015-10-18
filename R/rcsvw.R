@@ -29,9 +29,9 @@ Tabular<-function(url=NA){
     table<-as.data.frame(lapply(colnames(table),format_column,table,metadata))
     colnames(table)<-n
     if("aboutUrl" %in% names(metadata$tableSchema)){
-      ids<-sapply(as.vector(table[[id]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
       m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
       id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
+      ids<-sapply(as.vector(table[[id]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
       table<- cbind("@id"=ids,table)
     }
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
