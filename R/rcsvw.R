@@ -11,7 +11,7 @@ setClass(
     meta = "list")
 )
 
-Tabular<-function(url=NA,metadata_param=NULL){
+Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F)
   metadata_file<-NULL
   http_header<-GET(url)
@@ -23,6 +23,9 @@ Tabular<-function(url=NA,metadata_param=NULL){
     metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url)
   }else if("Link" %in% names(http_header)){
     metadata_file<-http_header$Link
+  }else if(!is.null(link_header)){
+    loc<-if(gsub(' ','',unlist(strsplit(link_header,';'))[2])=='rel=\"describedby\"') gsub('[<>]','',unlist(strsplit(link_header,';'))[1])
+    metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),loc,url)
   }
   if(!is.null(metadata_file)){
     metadata<-fromJSON(getURL(metadata_file,.opts=curlOptions(followlocation=TRUE)))
@@ -86,8 +89,8 @@ init<-function(){
   csvw_table <<- create.property(store,"http://www.w3.org/ns/csvw#table")
   csvw_row <<- create.property(store,"http://www.w3.org/ns/csvw#row")
 }
-csv2json<-function(url,metadata=NULL){
-  tb<-Tabular(url,metadata)
+csv2json<-function(url,metadata=NULL,link_header=NULL){
+  tb<-Tabular(url,metadata,link_header)
   if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
   tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]])
   toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1)))))
@@ -98,9 +101,9 @@ row2json<-function(index,url,data){
   list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
 
-csv2rdf<-function(url,metadata=NULL,output="store"){
+csv2rdf<-function(url,metadata=NULL,link_header=NULL,output="store"){
   init()
-  tb<-Tabular(url,metadata)
+  tb<-Tabular(url,metadata,link_header)
   tb@url <- tail(unlist(strsplit(url,"/")),n=1)
   if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
   #tb@url <- paste(tb@url,"#",sep="")
