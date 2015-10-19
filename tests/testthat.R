@@ -159,3 +159,15 @@ test_that("test016rdf", {
   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test016/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
   expect_equal(s1,s2)
 })
+
+test_that("test017json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test017/tree-ops.csv"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test017/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
+test_that("test017rdf", {
+  s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test017/tree-ops.csv")
+  s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test017/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
+  expect_equal(s1,s2)
+})
