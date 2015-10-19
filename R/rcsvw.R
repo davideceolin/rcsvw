@@ -17,16 +17,17 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   http_header<-GET(url)
   if(!is.null(metadata_param)){
     metadata_file<-metadata_param
-  }else if(url.exists(paste(url,"-metadata.json",sep=""))){
-    metadata_file<-paste(url,"-metadata.json",sep="")
-  }else if(url.exists(gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url))){
-    metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url)
   }else if("Link" %in% names(http_header)){
     metadata_file<-http_header$Link
   }else if(!is.null(link_header)){
     loc<-if(gsub(' ','',unlist(strsplit(link_header,';'))[2])=='rel=\"describedby\"') gsub('[<>]','',unlist(strsplit(link_header,';'))[1])
     metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),loc,url)
+  }else if(url.exists(paste(url,"-metadata.json",sep=""))){
+    metadata_file<-paste(url,"-metadata.json",sep="")
+  }else if(url.exists(gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url))){
+    metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url)
   }
+  print(metadata_file)
   if(!is.null(metadata_file)){
     metadata<-fromJSON(getURL(metadata_file,.opts=curlOptions(followlocation=TRUE)))
     colnames(table)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))

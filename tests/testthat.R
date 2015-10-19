@@ -135,3 +135,27 @@ test_that("test014rdf", {
   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test014/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
   expect_equal(s1,s2)
 })
+
+test_that("test015json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test015/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test015/user-metadata.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test015/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
+test_that("test015rdf", {
+  s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test015/tree-ops.csv", metadata="http://www.w3.org/2013/csvw/tests/test015/user-metadata.json")
+  s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test015/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
+  expect_equal(s1,s2)
+})
+
+test_that("test016json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test016/tree-ops.csv",link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"'))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test016/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
+test_that("test016rdf", {
+  s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test016/tree-ops.csv", link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"')
+  s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test016/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
+  expect_equal(s1,s2)
+})
