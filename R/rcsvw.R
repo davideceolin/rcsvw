@@ -27,7 +27,6 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   }else if(url.exists(gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url))){
     metadata_file<-gsub(tail(unlist(strsplit(url,"/")),n=1),"csv-metadata.json",url)
   }
-  print(metadata_file)
   if(!is.null(metadata_file)){
     metadata<-fromJSON(getURL(metadata_file,.opts=curlOptions(followlocation=TRUE)))
     colnames(table)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
