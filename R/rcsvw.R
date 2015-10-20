@@ -8,13 +8,17 @@ setClass(
   representation = representation(
     url = "character",
     tables = "list",
-    meta = "list")
+    meta = "list",
+    header = "logical")
 )
 
+#rownum = riga della tabella considerata
+#url = punta ad ogni riga
+
 Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
-  table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F)
   metadata_file<-NULL
   http_header<-GET(url)
+  rownum<-1
   if(!is.null(metadata_param)){
     metadata_file<-metadata_param
   }else if("Link" %in% names(http_header)){
@@ -29,10 +33,28 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   }
   if(!is.null(metadata_file)){
     metadata<-fromJSON(getURL(metadata_file,.opts=curlOptions(followlocation=TRUE)))
-    colnames(table)<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
-    n<-colnames(table)
-    table<-as.data.frame(lapply(colnames(table),format_column,table,metadata))
-    colnames(table)<-n
+    header<-T
+    if(!is.null(metadata$dialect$rownum)){
+      #rownum<-strtoi(metadata$dialect$rownum)
+      header<-metadata$dialect$rownum>=1
+      row.nums<-seq(rownum,length.out=nrow(table))
+    }else if(!is.null(metadata$dialect$header)){
+      header<-(metadata$dialect$header=="true")
+    }
+    table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F,header=header)
+    if(!is.null(metadata$dialect$rownum) && metadata$dialect$rownum!=0){
+      rownames(table)<-seq(metadata$dialect$rownum,length.out=nrow(table))
+    }
+    if(!is.null(metadata$tableSchema$columns)){
+      n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
+      colnames(table)<-n
+      table<-as.data.frame(lapply(n,format_column,table,metadata))
+      colnames(table)<-n
+    }else{
+      colnames(table)<-sapply(seq(1,ncol(table)),function(x)paste("_col.",x,sep=""))
+    }
+    #table<-cbind("rownum"=seq(rowcount,length.out=nrow(table)),table)
+    print(table)
     if("aboutUrl" %in% names(metadata$tableSchema)){
       m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
       id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
@@ -41,9 +63,11 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
     }
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
+    header<-T
+    table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F)
     meta<-list()
   }
-  new("Tabular",url=url,tables=list(table),meta=meta)
+  new("Tabular",url=url,tables=list(table),meta=meta,header=header)
 }
 
 clean <-function(y){
@@ -92,13 +116,13 @@ init<-function(){
 csv2json<-function(url,metadata=NULL,link_header=NULL){
   tb<-Tabular(url,metadata,link_header)
   if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
-  tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]])
+  tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header)
   toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1)))))
 }
 
-row2json<-function(index,url,data){
+row2json<-function(index,url,data,header){
   row = lapply(data[index,][,!is.na(data[index,])],as.character)
-  list(url=paste(url,"#row=",strtoi(index)+1,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
+  list(url=paste(url,"#row=",strtoi(index)+header,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
 
 csv2rdf<-function(url,metadata=NULL,link_header=NULL,output="store"){
@@ -113,7 +137,7 @@ csv2rdf<-function(url,metadata=NULL,link_header=NULL,output="store"){
   tb1 <- create.blankNode(store)
   add.triple(store,tg1,csvw_table,tb1)
   add.triple(store,tb1,rdf_type,csvw_Table)
-  lapply(rownames(tb@tables[[1]]),row2rdf,tb@url,tb@tables[[1]],tb1)
+  lapply(rownames(tb@tables[[1]]),row2rdf,tb@url,tb@tables[[1]],tb1,tb@header)
   add.triple(store,tb1,csvw_url,tb@url)
   if(output=="text"){
     dump.rdf(store)
@@ -127,7 +151,7 @@ csv2rdf<-function(url,metadata=NULL,link_header=NULL,output="store"){
   }
 }
 
-row2rdf<-function(index,url,data,tb){
+row2rdf<-function(index,url,data,tb,header){
   row = data[index,][,!is.na(data[index,])]
   if("@id" %in% colnames(row)){
     desc <- create.resource(store,as.character(row[1]))
@@ -139,7 +163,7 @@ row2rdf<-function(index,url,data,tb){
   add.triple(store,rowrdf,csvw_describes,desc)
   lapply(seq(1,ncol(data)),rowdescribesrdf,data,index,desc,url)
   add.triple(store,rowrdf,csvw_rownum,index)
-  add.triple(store,rowrdf,csvw_url,paste(url,"#row=",strtoi(index)+1,sep=""))
+  add.triple(store,rowrdf,csvw_url,paste(url,"#row=",strtoi(index)+header,sep=""))
   add.triple(store,tb,csvw_row,rowrdf)
 }
 

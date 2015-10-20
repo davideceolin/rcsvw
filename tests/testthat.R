@@ -1,5 +1,12 @@
 library(testthat)
 library("rcsvw")
+library("rrdf")
+
+ store <<- new.rdf(FALSE)
+ add.prefix(store,prefix="csvw",namespace="http://www.w3.org/ns/csvw#")
+ add.triple(store,"http://www.w3.org/ns/csvw#describes","http://www.w3.org/ns/csvw#describes","http://www.w3.org/ns/csvw#describes")
+ save.rdf(store,"test.ttl",format="TURTLE")
+
 test_that("test001rdf", {
   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test001.csv",output = "store")
   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test001.ttl",.opts=curlOptions(followlocation=TRUE)) ,format="TURTLE")             
@@ -181,5 +188,17 @@ test_that("test018json", {
 test_that("test018rdf", {
   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test018/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test018/user-metadata.json")
   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test018/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
+  expect_equal(s1,s2)
+})
+
+test_that("test023json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test023-user-metadata.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test023.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
+test_that("test023rdf", {
+  s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test023-user-metadata.json")
+  s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test023.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
   expect_equal(s1,s2)
 })
