@@ -54,7 +54,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       colnames(table)<-sapply(seq(1,ncol(table)),function(x)paste("_col.",x,sep=""))
     }
     #table<-cbind("rownum"=seq(rowcount,length.out=nrow(table)),table)
-    print(table)
+    #print(table)
     if("aboutUrl" %in% names(metadata$tableSchema)){
       m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
       id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
@@ -96,13 +96,15 @@ format_column<-function(col_name,table,metadata){
     table[,col_name]
 }
 
-init<-function(){
+init<-function(minimal=F){
   store <<- new.rdf(FALSE)
-  add.prefix(store,prefix="csvw",namespace="http://www.w3.org/ns/csvw#")
-  add.prefix(store,prefix="rdf",namespace="http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+  if(!minimal){
+    add.prefix(store,prefix="csvw",namespace="http://www.w3.org/ns/csvw#")
+    add.prefix(store,prefix="rdf",namespace="http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+    add.prefix(store,prefix="dc",namespace="http://purl.org/dc/terms/")
+    add.prefix(store,prefix="dcat",namespace="http://www.w3.org/ns/dcat#")
+  }
   add.prefix(store,prefix="xsd",namespace="http://www.w3.org/2001/XMLSchema#")
-  add.prefix(store,prefix="dc",namespace="http://purl.org/dc/terms/")
-  add.prefix(store,prefix="dcat",namespace="http://www.w3.org/ns/dcat#")
   csvw_describes <<- create.property(store,"http://www.w3.org/ns/csvw#describes")
   csvw_Table <<- create.resource(store,"http://www.w3.org/ns/csvw#Table")
   csvw_tablegroup <<- create.resource(store,"http://www.w3.org/ns/csvw#TableGroup")
@@ -113,11 +115,16 @@ init<-function(){
   csvw_table <<- create.property(store,"http://www.w3.org/ns/csvw#table")
   csvw_row <<- create.property(store,"http://www.w3.org/ns/csvw#row")
 }
-csv2json<-function(url,metadata=NULL,link_header=NULL){
+
+csv2json<-function(url,metadata=NULL,link_header=NULL,minimal=F){
   tb<-Tabular(url,metadata,link_header)
   if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
   tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header)
-  toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1)))))
+  if(minimal){
+    toJSON(sapply(tb1,function(x)x$describes))
+  }else{
+    toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1))))) 
+  }
 }
 
 row2json<-function(index,url,data,header){
@@ -125,20 +132,21 @@ row2json<-function(index,url,data,header){
   list(url=paste(url,"#row=",strtoi(index)+header,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
 }
 
-csv2rdf<-function(url,metadata=NULL,link_header=NULL,output="store"){
+csv2rdf<-function(url,metadata=NULL,link_header=NULL,minimal=F,output="store"){
   init()
   tb<-Tabular(url,metadata,link_header)
   tb@url <- tail(unlist(strsplit(url,"/")),n=1)
-  if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
-  #tb@url <- paste(tb@url,"#",sep="")
-  add.prefix(store,prefix="",namespace=paste(tb@url,"#",sep=""))
-  tg1 <- create.blankNode(store)
-  add.triple(store,tg1,rdf_type,csvw_tablegroup)
-  tb1 <- create.blankNode(store)
-  add.triple(store,tg1,csvw_table,tb1)
-  add.triple(store,tb1,rdf_type,csvw_Table)
-  lapply(rownames(tb@tables[[1]]),row2rdf,tb@url,tb@tables[[1]],tb1,tb@header)
-  add.triple(store,tb1,csvw_url,tb@url)
+  if(!minimal){
+    if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
+    add.prefix(store,prefix="",namespace=paste(tb@url,"#",sep=""))
+    tg1 <- create.blankNode(store)
+    add.triple(store,tg1,rdf_type,csvw_tablegroup)
+    tb1 <- create.blankNode(store)
+    add.triple(store,tg1,csvw_table,tb1)
+    add.triple(store,tb1,rdf_type,csvw_Table)
+    add.triple(store,tb1,csvw_url,tb@url)
+  }
+  lapply(rownames(tb@tables[[1]]),row2rdf,tb@url,tb@tables[[1]],tb1,tb@header,minimal)
   if(output=="text"){
     dump.rdf(store)
   }else if(output=="file"){
@@ -151,25 +159,30 @@ csv2rdf<-function(url,metadata=NULL,link_header=NULL,output="store"){
   }
 }
 
-row2rdf<-function(index,url,data,tb,header){
+row2rdf<-function(index,url,data,tb,header,minimal=F){
   row = data[index,][,!is.na(data[index,])]
   if("@id" %in% colnames(row)){
     desc <- create.resource(store,as.character(row[1]))
   }else{
     desc <- create.blankNode(store)
   }
+  if(!minimal){
   rowrdf <- create.blankNode(store)
   add.triple(store,rowrdf,rdf_type,csvw_Row)
   add.triple(store,rowrdf,csvw_describes,desc)
-  lapply(seq(1,ncol(data)),rowdescribesrdf,data,index,desc,url)
   add.triple(store,rowrdf,csvw_rownum,index)
   add.triple(store,rowrdf,csvw_url,paste(url,"#row=",strtoi(index)+header,sep=""))
   add.triple(store,tb,csvw_row,rowrdf)
+  }
+  lapply(seq(1,ncol(data)),rowdescribesrdf,data,index,desc,url,minimal)
 }
 
-rowdescribesrdf <- function(i,data,index,desc,url){
+rowdescribesrdf <- function(i,data,index,desc,url,minimal){
   if(!is.null(data[index,i]) & !is.na(data[index,i])>0){
-    p<-create.property(store,paste(url,"#",colnames(data)[i],sep=""));
+    if(minimal){
+      desc<-create.blankNode(store)
+    }
+    p<-create.property(store,paste(url,"#",colnames(data)[i],sep=""))
     add.triple(store,desc,p,as.character(data[index,i]))
   }
 }
