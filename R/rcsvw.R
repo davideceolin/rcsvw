@@ -186,3 +186,4 @@ rowdescribesrdf <- function(i,data,index,desc,url,minimal){
     add.triple(store,desc,p,as.character(data[index,i]))
   }
 }
+
