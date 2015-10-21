@@ -9,6 +9,7 @@ init_test<-function(){
   add.prefix(store,prefix="doap",namespace="http://usefulinc.com/ns/doap#")
   add.prefix(store,prefix="earl",namespace = "http://www.w3.org/ns/earl#")
   add.prefix(store,prefix="dc",namespace="http://purl.org/dc/terms/")
+  add.prefix(store,prefix="foaf",namespace="http://xmlns.com/foaf/0.1/")
   rdf_type <<- create.property(store,"http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
   add.triple(store,rcsvw,rdf_type,create.resource(store,"doap:Project"))
   add.triple(store,rcsvw,rdf_type,create.resource(store,"earl:TestSubject"))
@@ -21,24 +22,33 @@ init_test<-function(){
   add.triple(store,rcsvw,create.property(store,"doap:developer"),me)
   add.triple(store,rcsvw,create.property(store,"dc:title"),"rcsvw")
   add.triple(store,rcsvw,create.property(store,"dc:date"),as.character(Sys.Date()))
-  add.triple(store,rcsvw,create.property(store,"dc:creator"),create.resource(store,"http://trustingwebdata.org/foaf#me"))
+  me<-create.resource(store,"http://trustingwebdata.org/foaf#me")
+  add.triple(store,rcsvw,create.property(store,"dc:creator"),me)
+  add.triple(store,me,rdf_type,create.resource(store,"earl:Assertor"))
+  add.triple(store,me,rdf_type,create.resource(store,"foaf:Person"))
+  add.triple(store,me,create.property(store,"foaf:name"),"Davide Ceolin")
+  add.triple(store,me,create.property(store,"foaf:title"),"Implementor")
+  add.triple(store,me,create.property(store,"foaf:homepage"),create.resource(store,"http://trustingwebdata.org/davide.html"))
   save.rdf(store,"/Users/dceolin/Desktop/test.ttl",format="TURTLE")
 } 
 
 record_test<-function(test,file){
   store = load.rdf(file,"TURTLE")
-  text<-paste("[ a <http://www.w3.org/ns/earl#Assertion>;
-          <http://www.w3.org/ns/earl#assertedBy> <http://trustingwebdata.org/foaf#me>;
-          <http://www.w3.org/ns/earl#subject> <https://github.com/davideceolin/rcsvw>;
-          <http://www.w3.org/ns/earl#test> <http://www.w3.org/2013/csvw/tests/manifest-rdf#",test,">; 
-          <http://www.w3.org/ns/earl#result> [
-            a <http://www.w3.org/ns/earl#TestResult>;
-            <http://www.w3.org/ns/earl#outcome> <http://www.w3.org/ns/earl#passed>;
-            <http://purl.org/dc/terms/date> \"",as.character(format(Sys.time(), "%Y-%m-%dT%X")),"\"^^xsd:date];
-          <http://www.w3.org/ns/earl#mode> <http://www.w3.org/ns/earl#automatic> ] .",sep="")
-  text<-gsub('\n','',text)
-  fromString.rdf(text,format="TURTLE",appendTo=store)
-  save.rdf(store,"/Users/dceolin/Desktop/test.ttl",format="TURTLE")
+  t<-format(Sys.time(), "%Y-%m-%dT%X^^xsd:date")
+  rdf_type<-create.property(store,"http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+  TestResult<-create.resource(store,"http://www.w3.org/ns/earl#TestResult")
+  ass<-create.blankNode(store)
+   add.triple(store,ass,rdf_type,create.resource(store,"http://www.w3.org/ns/earl#Assertion"))
+   add.triple(store,ass,create.property(store,"http://www.w3.org/ns/earl#assertedBy"),create.resource(store,"http://trustingwebdata.org/foaf#me"))
+   add.triple(store,ass,create.property(store,"http://www.w3.org/ns/earl#subject"),create.resource(store,"https://github.com/davideceolin/rcsvw"))
+   add.triple(store,ass,create.property(store,"http://www.w3.org/ns/earl#test"),create.resource(store,paste("http://www.w3.org/2013/csvw/tests/manifest-rdf#",test,sep="")))
+   res<-create.blankNode(store)  
+   add.triple(store,ass,create.property(store,"http://www.w3.org/ns/earl#result"),res)
+   add.triple(store,ass,create.property(store,"http://www.w3.org/ns/earl#mode"),create.resource(store,"http://www.w3.org/ns/earl#automatic"))
+   add.triple(store,res,rdf_type,TestResult)
+   add.triple(store,res,create.property(store,"http://www.w3.org/ns/earl#outcome"),create.resource(store,"http://www.w3.org/ns/earl#passed"))
+   add.triple(store,res,create.property(store,"http://purl.org/dc/terms/date"),t)
+   save.rdf(store,"/Users/dceolin/Desktop/test.ttl",format="TURTLE")
 }
  
 test_that("test001rdf", {

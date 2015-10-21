@@ -2,6 +2,7 @@ library("rrdf")
 library("RCurl")
 library("rjson")
 library("httr")
+library("stringi")
 
 setClass(
   Class = "Tabular",
@@ -9,14 +10,13 @@ setClass(
     url = "character",
     tables = "list",
     meta = "list",
-    header = "logical")
+    header = "logical",
+    foreignKeys = "NULL")
 )
-
-#rownum = riga della tabella considerata
-#url = punta ad ogni riga
 
 Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   metadata_file<-NULL
+  foreignKeys<-as.list(metadata$tableSchema$foreignKeys)
   http_header<-GET(url)
   rownum<-1
   if(!is.null(metadata_param)){
@@ -46,7 +46,13 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       rownames(table)<-seq(metadata$dialect$rownum,length.out=nrow(table))
     }
     if(!is.null(metadata$tableSchema$columns)){
-      n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){x$name}))
+      n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){
+        if(!is.null(x$propertyUrl)){
+          stri_replace_all_fixed(url,names(x),x,vectorize_all = F)
+        }else{
+         x$name
+        }}))
+      n<-gsub("[{}_]",'',n)
       colnames(table)<-n
       table<-as.data.frame(lapply(n,format_column,table,metadata))
       colnames(table)<-n
@@ -67,7 +73,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
     table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F)
     meta<-list()
   }
-  new("Tabular",url=url,tables=list(table),meta=meta,header=header)
+  new("Tabular",url=url,tables=list(table),meta=meta,header=header,foreignKeys=foreignKeys)
 }
 
 clean <-function(y){
@@ -116,14 +122,20 @@ init<-function(minimal=F){
   csvw_row <<- create.property(store,"http://www.w3.org/ns/csvw#row")
 }
 
-csv2json<-function(url,metadata=NULL,link_header=NULL,minimal=F){
-  tb<-Tabular(url,metadata,link_header)
-  if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
-  tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header)
-  if(minimal){
-    toJSON(sapply(tb1,function(x)x$describes))
+csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
+  if(!is.null(url)){
+    tb<-Tabular(url,metadata,link_header)
+    if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
+    tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header)
+    print(tb1@foreignKeys)
+    if(minimal){
+      toJSON(sapply(tb1,function(x)x$describes))
+    }else{
+      toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1))))) 
+    }
   }else{
-    toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1))))) 
+    metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
+    lapply(fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))$tables,function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata))})
   }
 }
 
@@ -186,4 +198,3 @@ rowdescribesrdf <- function(i,data,index,desc,url,minimal){
     add.triple(store,desc,p,as.character(data[index,i]))
   }
 }
-
