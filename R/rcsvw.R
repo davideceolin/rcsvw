@@ -11,12 +11,15 @@ setClass(
     tables = "list",
     meta = "list",
     header = "logical",
-    foreignKeys = "NULL")
+    foreignKeys = "list")
 )
 
 Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   metadata_file<-NULL
-  foreignKeys<-as.list(metadata$tableSchema$foreignKeys)
+  foreignKeys<-list()
+  if(!is.null(metadata$tableSchema$foreignKeys)){
+    foreignKeys<-metadata$tableSchema$foreignKeys
+  }
   http_header<-GET(url)
   rownum<-1
   if(!is.null(metadata_param)){
@@ -33,9 +36,11 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   }
   if(!is.null(metadata_file)){
     metadata<-fromJSON(getURL(metadata_file,.opts=curlOptions(followlocation=TRUE)))
+    if(!is.null(metadata$tables)){
+      metadata<-metadata$tables[sapply(metadata$tables,function(x)(x$url==tail(unlist(strsplit(url,"/")),n=1)))][[1]]
+    }
     header<-T
     if(!is.null(metadata$dialect$rownum)){
-      #rownum<-strtoi(metadata$dialect$rownum)
       header<-metadata$dialect$rownum>=1
       row.nums<-seq(rownum,length.out=nrow(table))
     }else if(!is.null(metadata$dialect$header)){
@@ -45,6 +50,12 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
     if(!is.null(metadata$dialect$rownum) && metadata$dialect$rownum!=0){
       rownames(table)<-seq(metadata$dialect$rownum,length.out=nrow(table))
     }
+    if("aboutUrl" %in% names(metadata$tableSchema)){
+      m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
+      id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
+      ids<-sapply(as.vector(table[[gsub("[#_]",'',id)]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
+      table<- cbind("@id"=ids,table)
+    }
     if(!is.null(metadata$tableSchema$columns)){
       n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){
         if(!is.null(x$propertyUrl)){
@@ -53,19 +64,19 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
          x$name
         }}))
       n<-gsub("[{}_]",'',n)
+      id_tag<-F
+      if(colnames(table)[1]=="@id"){
+        id<-table[,1]
+        table<-table[,-1]
+        id_tag<-T
+      }
+      table<-as.data.frame(lapply(seq(1,ncol(table)),format_column,table,metadata))
       colnames(table)<-n
-      table<-as.data.frame(lapply(n,format_column,table,metadata))
-      colnames(table)<-n
+      if(id_tag){
+        table<-cbind("@id"=id,table)
+      }
     }else{
       colnames(table)<-sapply(seq(1,ncol(table)),function(x)paste("_col.",x,sep=""))
-    }
-    #table<-cbind("rownum"=seq(rowcount,length.out=nrow(table)),table)
-    #print(table)
-    if("aboutUrl" %in% names(metadata$tableSchema)){
-      m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
-      id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
-      ids<-sapply(as.vector(table[[id]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
-      table<- cbind("@id"=ids,table)
     }
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
@@ -89,17 +100,19 @@ clean <-function(y){
       y
 }
 
-format_column<-function(col_name,table,metadata){
-  index<-sapply(metadata$tableSchema$columns,function(y){y$name==col_name})
+format_column<-function(index,table,metadata){
+  index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index]})
+  if(length(metadata$tableSchema$columns[index])>0){
   datatype<-metadata$tableSchema$columns[index][[1]]$datatype
   if(!is.atomic(datatype) && datatype$base=="date"){
     R_format<-gsub("yyyy","Y",datatype$format,perl=TRUE)
     R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
     d<-lapply(table[,col_name],function(y) as.Date(y,format=R_format))
     R_format<-gsub("M","m",R_format,perl=TRUE)
-    unlist(lapply(table[,col_name],function(y) as.character(as.Date(y,format=R_format))))
+    unlist(lapply(table[,colnames(table)[index]],function(y) as.character(as.Date(y,format=R_format))))
   }else
-    table[,col_name]
+    table[,colnames(table)[index]]
+  }
 }
 
 init<-function(minimal=F){
@@ -125,9 +138,9 @@ init<-function(minimal=F){
 csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
   if(!is.null(url)){
     tb<-Tabular(url,metadata,link_header)
-    if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
+    if("@id" %in% colnames(tb@tables[[1]])){
+      tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
     tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header)
-    print(tb1@foreignKeys)
     if(minimal){
       toJSON(sapply(tb1,function(x)x$describes))
     }else{
@@ -135,13 +148,16 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
     }
   }else{
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
-    lapply(fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))$tables,function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata))})
+    lapply(fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))$tables,
+           function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata)})
   }
 }
 
 row2json<-function(index,url,data,header){
   row = lapply(data[index,][,!is.na(data[index,])],as.character)
-  list(url=paste(url,"#row=",strtoi(index)+header,sep=""),rownum=strtoi(index),describes=list(as.list(data.frame(row,check.names=F))))
+  list(url=paste(url,"#row=",strtoi(index)+header,sep=""),
+       rownum=strtoi(index),
+       describes=list(as.list(data.frame(row,check.names=F))))
 }
 
 csv2rdf<-function(url,metadata=NULL,link_header=NULL,minimal=F,output="store"){
