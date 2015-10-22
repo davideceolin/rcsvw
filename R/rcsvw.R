@@ -47,6 +47,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       header<-(metadata$dialect$header=="true")
     }
     table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F,header=header)
+    print(metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x)!is.null(x$valueUrl))]$name)
     if(!is.null(metadata$dialect$rownum) && metadata$dialect$rownum!=0){
       rownames(table)<-seq(metadata$dialect$rownum,length.out=nrow(table))
     }
@@ -57,17 +58,19 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       ids<-sapply(as.vector(table[[clean_id]]),
                   function(x){paste(gsub(paste("\\{",id,"\\}",sep=""),paste(gsub(clean_id,'',id),x,sep=""),metadata$tableSchema$aboutUrl),sep="")}
                   )
-      print(ids)
       table<- cbind("@id"=ids,table)
     }
     if(!is.null(metadata$tableSchema$columns)){
       n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){
         if(!is.null(x$propertyUrl)){
-          stri_replace_all_fixed(url,names(x),x,vectorize_all = F)
+          stri_replace_last_fixed(x$propertyUrl,names(x),x,vectorize_all = F)[1]
+        }else if(!is.null(metadata$tableSchema$propertyUrl)){
+          stri_replace_last_fixed(metadata$tableSchema$propertyUrl,names(x),x,vectorize_all = F)[1]
         }else{
          x$name
         }}))
       n<-gsub("[{}_]",'',n)
+      #print(n)
       id_tag<-F
       if(colnames(table)[1]=="@id"){
         id<-table[,1]
@@ -159,8 +162,9 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
     }
   }else{
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
-    lapply(fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))$tables,
+    l<-lapply(fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))$tables,
            function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata)})
+    toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]])))
   }
 }
 
