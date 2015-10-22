@@ -53,7 +53,11 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
     if("aboutUrl" %in% names(metadata$tableSchema)){
       m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
       id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
-      ids<-sapply(as.vector(table[[gsub("[#_]",'',id)]]),function(x) paste(gsub(paste("\\{",id,"\\}",sep=""),x,metadata$tableSchema$aboutUrl),sep=""))
+      clean_id<-gsub("[#_]",'',id)
+      ids<-sapply(as.vector(table[[clean_id]]),
+                  function(x){paste(gsub(paste("\\{",id,"\\}",sep=""),paste(gsub(clean_id,'',id),x,sep=""),metadata$tableSchema$aboutUrl),sep="")}
+                  )
+      print(ids)
       table<- cbind("@id"=ids,table)
     }
     if(!is.null(metadata$tableSchema$columns)){
@@ -139,7 +143,14 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
   if(!is.null(url)){
     tb<-Tabular(url,metadata,link_header)
     if("@id" %in% colnames(tb@tables[[1]])){
-      tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
+      tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x){ 
+        if(grep("http://",x)){
+          x
+        }else{
+          paste(url,x,sep="")
+        }
+      }
+      )}
     tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header)
     if(minimal){
       toJSON(sapply(tb1,function(x)x$describes))
