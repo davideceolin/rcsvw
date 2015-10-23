@@ -18,6 +18,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   metadata_file<-NULL
   foreignKeys<-list()
   rownum<-1
+  dialect<-list()
   if(!is.null(url)){
     http_header<-GET(url)
   }
@@ -36,21 +37,22 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   if(!is.null(metadata_file)){
     metadata<-fromJSON(getURL(metadata_file,.opts=curlOptions(followlocation=TRUE)))
     if(!is.null(metadata$tables)){
+      dialect<-metadata$dialect
       metadata<-metadata$tables[sapply(metadata$tables,function(x)(x$url==tail(unlist(strsplit(url,"/")),n=1)))][[1]]
     }
     header<-T
-    if(!is.null(metadata$dialect$rownum)){
-      header<-metadata$dialect$rownum>=1
-      row.nums<-seq(rownum,length.out=nrow(table))
-    }else if(!is.null(metadata$dialect$header)){
-      header<-(metadata$dialect$header=="true")
+    if(!is.null(dialect$headerRowCount)){
+      header<-dialect$headerRowCount>=1
+      #row.nums<-seq(rownum,length.out=nrow(table))
+    }else if(!is.null(dialect$header)){
+      header<-(dialect$header=="true")
     }
     table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F,header=header)
     ext_ref<-metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x)!is.null(x$valueUrl))]
     lapply(ext_ref,function(x) table[,x$name]<<-
              sapply(table[,x$name], function(y){gsub("[{}]",'',stri_replace_last_fixed(x$valueUrl,x$name,y,vectorize_all = F)[1])}))
-    if(!is.null(metadata$dialect$rownum) && metadata$dialect$rownum!=0){
-      rownames(table)<-seq(metadata$dialect$rownum,length.out=nrow(table))
+    if(!is.null(dialect$rownum) && dialect$rownum!=0){
+      rownames(table)<-seq(dialect$rownum,length.out=nrow(table))
     }
     if("aboutUrl" %in% names(metadata$tableSchema)){
       m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
