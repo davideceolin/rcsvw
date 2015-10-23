@@ -91,6 +91,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   }else{
     header<-T
     table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F)
+    lapply(rownames(table),function(x) table[x,]<<-as.character(table[x,]))
     meta<-list()
   }
   new("Tabular",url=url,tables=list(table),meta=meta,header=header,foreignKeys=foreignKeys)
@@ -130,6 +131,8 @@ format_column<-function(index,table,metadata){
   }else{
     table[,colnames(table)[index]]
   }
+  }else{
+    sapply(table[,colnames(table)[index]],as.character)
   }
 }
 
