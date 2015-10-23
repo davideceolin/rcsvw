@@ -130,7 +130,7 @@ format_column<-function(index,table,metadata){
   }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
     unlist(lapply(table[,colnames(table)[index]],as.character))
   }else{
-    table[,colnames(table)[index]]
+    as.character(table[,colnames(table)[index]])
   }
   }
 }
