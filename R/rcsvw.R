@@ -183,8 +183,12 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
   }else{
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
     l<-lapply(metadata_f$tables,
-              function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata)})
-    toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]])))
+              function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata,minimal=minimal)})
+    if(minimal){
+      toJSON(sapply(l,fromJSON))
+    }else{
+      toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]])))
+    }
   }
 }
 

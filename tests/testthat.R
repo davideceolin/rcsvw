@@ -318,3 +318,10 @@ test_that("test030rdf", {
   expect_equal(s1,s2)
   record_test("test028","/Users/dceolin/Desktop/test.ttl")
 }) 
+
+test_that("test031json", {
+  s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/countries.json",minimal=T))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test031.json",.opts=curlOptions(followlocation=TRUE)))             
+  expect_equal(s1,s2)
+})
+
