@@ -17,14 +17,13 @@ setClass(
 Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
   metadata_file<-NULL
   foreignKeys<-list()
-  if(!is.null(metadata$tableSchema$foreignKeys)){
-    foreignKeys<-metadata$tableSchema$foreignKeys
-  }
-  http_header<-GET(url)
   rownum<-1
+  if(!is.null(url)){
+    http_header<-GET(url)
+  }
   if(!is.null(metadata_param)){
     metadata_file<-metadata_param
-  }else if("Link" %in% names(http_header)){
+  }else if(!is.null(url) && "Link" %in% names(http_header)){
     metadata_file<-http_header$Link
   }else if(!is.null(link_header)){
     loc<-if(gsub(' ','',unlist(strsplit(link_header,';'))[2])=='rel=\"describedby\"') gsub('[<>]','',unlist(strsplit(link_header,';'))[1])
@@ -47,7 +46,9 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       header<-(metadata$dialect$header=="true")
     }
     table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F,header=header)
-    print(metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x)!is.null(x$valueUrl))]$name)
+    ext_ref<-metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x)!is.null(x$valueUrl))]
+    lapply(ext_ref,function(x) table[,x$name]<<-
+             sapply(table[,x$name], function(y){gsub("[{}]",'',stri_replace_last_fixed(x$valueUrl,x$name,y,vectorize_all = F)[1])}))
     if(!is.null(metadata$dialect$rownum) && metadata$dialect$rownum!=0){
       rownames(table)<-seq(metadata$dialect$rownum,length.out=nrow(table))
     }
@@ -63,14 +64,15 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
     if(!is.null(metadata$tableSchema$columns)){
       n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){
         if(!is.null(x$propertyUrl)){
-          stri_replace_last_fixed(x$propertyUrl,names(x),x,vectorize_all = F)[1]
+          s<-stri_replace_last_fixed(x$propertyUrl,names(x),x,vectorize_all = F)[1]
+          check_ns(s)
         }else if(!is.null(metadata$tableSchema$propertyUrl)){
-          stri_replace_last_fixed(metadata$tableSchema$propertyUrl,names(x),x,vectorize_all = F)[1]
+          s<-stri_replace_last_fixed(metadata$tableSchema$propertyUrl,names(x),x,vectorize_all = F)[1]
+          check_ns(s)
         }else{
          x$name
         }}))
       n<-gsub("[{}_]",'',n)
-      #print(n)
       id_tag<-F
       if(colnames(table)[1]=="@id"){
         id<-table[,1]
@@ -92,6 +94,12 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
     meta<-list()
   }
   new("Tabular",url=url,tables=list(table),meta=meta,header=header,foreignKeys=foreignKeys)
+}
+
+check_ns<-function(x){
+  ns<-fromJSON(getURL("http://www.w3.org/2013/json-ld-context/rdfa11"))
+  n<-which(lapply(ns$'@context',function(y) {length(grep(y,x,fixed = T))>0})==1)
+  if(length(n)>0) paste(names(n),":",sub(ns$'@context'[n],"",x),sep="") else x
 }
 
 clean <-function(y){
@@ -117,8 +125,11 @@ format_column<-function(index,table,metadata){
     d<-lapply(table[,col_name],function(y) as.Date(y,format=R_format))
     R_format<-gsub("M","m",R_format,perl=TRUE)
     unlist(lapply(table[,colnames(table)[index]],function(y) as.character(as.Date(y,format=R_format))))
-  }else
+  }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
+    unlist(lapply(table[,colnames(table)[index]],as.character))
+  }else{
     table[,colnames(table)[index]]
+  }
   }
 }
 
@@ -162,14 +173,15 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
     }
   }else{
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
-    l<-lapply(fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))$tables,
+    l<-lapply(metadata_f$tables,
            function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata)})
     toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]])))
   }
 }
 
 row2json<-function(index,url,data,header){
-  row = lapply(data[index,][,!is.na(data[index,])],as.character)
+  #row = lapply(data[index,][,!is.na(data[index,])],as.character)
+  row = data[index,][,!is.na(data[index,])]
   list(url=paste(url,"#row=",strtoi(index)+header,sep=""),
        rownum=strtoi(index),
        describes=list(as.list(data.frame(row,check.names=F))))
