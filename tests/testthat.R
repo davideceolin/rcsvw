@@ -304,7 +304,6 @@ test_that("test028json", {
  }) 
 
 test_that("test030json", {
-  csv2json("http://www.w3.org/2013/csvw/tests/countries.csv",metadata="http://www.w3.org/2013/csvw/tests/countries.json")   
   s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/countries.json"))
   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test030.json",.opts=curlOptions(followlocation=TRUE)))             
   expect_equal(s1,s2)

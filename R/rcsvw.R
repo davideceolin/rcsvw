@@ -74,8 +74,10 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
         }else{
          x$name
         }}))
-      n<-gsub("[{]_[]}]",'',n)
-      n<-gsub("[{}]",'',n)
+      n<-gsub("[{]#_",'#',n)
+      n<-gsub("[{]_",'',n)
+      n<-gsub("[{]",'',n)
+      n<-gsub("[}]",'',n)
       id_tag<-F
       if(colnames(table)[1]=="@id"){
         id<-table[,1]
@@ -131,6 +133,10 @@ format_column<-function(index,table,metadata){
     unlist(lapply(table[,colnames(table)[index]],function(y) as.character(as.Date(y,format=R_format))))
   }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
     unlist(lapply(table[,colnames(table)[index]],as.character))
+  }else if(length(datatype)>0 && datatype == "number"){
+    table[,colnames(table)[index]]
+  }else if(length(datatype)>0 && datatype == "integer"){
+    round(table[,colnames(table)[index]],0)
   }else{
     as.character(table[,colnames(table)[index]])
   }
