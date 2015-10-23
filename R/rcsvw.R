@@ -72,7 +72,8 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
         }else{
          x$name
         }}))
-      n<-gsub("[{}_]",'',n)
+      n<-gsub("[{]_[]}]",'',n)
+      n<-gsub("[{}]",'',n)
       id_tag<-F
       if(colnames(table)[1]=="@id"){
         id<-table[,1]
@@ -99,7 +100,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
 
 check_ns<-function(x){
   ns<-fromJSON(getURL("http://www.w3.org/2013/json-ld-context/rdfa11"))
-  n<-which(lapply(ns$'@context',function(y) {length(grep(y,x,fixed = T))>0})==1)
+  n<-which(lapply(ns$'@context',function(y) {grepl(y,x,fixed = T)})==1)
   if(length(n)>0) paste(names(n),":",sub(ns$'@context'[n],"",x),sep="") else x
 }
 
@@ -117,13 +118,13 @@ clean <-function(y){
 }
 
 format_column<-function(index,table,metadata){
-  index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index]})
+  index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index] || y$title==colnames(table)[index]})
   if(length(metadata$tableSchema$columns[index])>0){
   datatype<-metadata$tableSchema$columns[index][[1]]$datatype
   if(!is.atomic(datatype) && datatype$base=="date"){
     R_format<-gsub("yyyy","Y",datatype$format,perl=TRUE)
     R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
-    d<-lapply(table[,col_name],function(y) as.Date(y,format=R_format))
+    d<-lapply(table[,index],function(y) as.Date(y,format=R_format))
     R_format<-gsub("M","m",R_format,perl=TRUE)
     unlist(lapply(table[,colnames(table)[index]],function(y) as.character(as.Date(y,format=R_format))))
   }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
@@ -131,8 +132,6 @@ format_column<-function(index,table,metadata){
   }else{
     table[,colnames(table)[index]]
   }
-  }else{
-    sapply(table[,colnames(table)[index]],as.character)
   }
 }
 
@@ -161,7 +160,7 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
     tb<-Tabular(url,metadata,link_header)
     if("@id" %in% colnames(tb@tables[[1]])){
       tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x){ 
-        if(grep("http://",x)){
+        if(grepl("http://",x)){
           x
         }else{
           paste(url,x,sep="")
