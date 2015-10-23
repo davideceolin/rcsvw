@@ -316,7 +316,7 @@ test_that("test030rdf", {
   s1 <- csv2rdf(metadata="http://www.w3.org/2013/csvw/tests/countries.json")
   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test030.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
   expect_equal(s1,s2)
-  record_test("test028","/Users/dceolin/Desktop/test.ttl")
+  record_test("test030","/Users/dceolin/Desktop/test.ttl")
 }) 
 
 test_that("test031json", {
@@ -324,4 +324,11 @@ test_that("test031json", {
   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test031.json",.opts=curlOptions(followlocation=TRUE)))             
   expect_equal(s1,s2)
 })
+
+test_that("test031rdf", {
+  s1 <- csv2rdf(metadata="http://www.w3.org/2013/csvw/tests/countries.json",minimal=T)
+  s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test030.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
+  expect_equal(s1,s2)
+  record_test("test031","/Users/dceolin/Desktop/test.ttl")
+}) 
 

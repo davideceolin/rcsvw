@@ -228,12 +228,17 @@ csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="stor
       store
     }
   }else{
-    init()
-    tg <- create.blankNode(store)
-    add.triple(store,tg,rdf_type,csvw_tablegroup)
+    if(!minimal){
+      init(F)
+      tg <- create.blankNode(store)
+      add.triple(store,tg,rdf_type,csvw_tablegroup)
+    }else{
+      tg<-NULL
+      init(T)
+    }
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
     lapply(metadata_f$tables,
-           function(x){csv2rdf(url=gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata=metadata,tg=tg,init=F)})
+           function(x){csv2rdf(url=gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata=metadata,tg=tg,minimal=minimal,init=F)})
     #toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]])))
     if(output=="text"){
       dump.rdf(store)
