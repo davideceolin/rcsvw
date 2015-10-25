@@ -49,8 +49,11 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
     }
     table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F,header=header)
     ext_ref<-metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x)!is.null(x$valueUrl))]
-    lapply(ext_ref,function(x) table[,x$name]<<-
-             sapply(table[,x$name], function(y){gsub("[{}]",'',stri_replace_last_fixed(x$valueUrl,x$name,y,vectorize_all = F)[1])}))
+    virtual<-metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x) !is.null(x$virtual) && x$virtual==T)]
+    
+    lapply(virtual,function(x) {table<<-cbind(table,rep("",nrow(table)));names(table)[ncol(table)]<<-x$name;colnames(table)[ncol(table)]<<-x$name})
+    lapply(ext_ref,function(x){print(x); table[,x$name]<<-
+             sapply(table[,x$name], function(y){gsub("[{}]",'',stri_replace_last_fixed(x$valueUrl,x$name,y,vectorize_all = F)[1])})})
     if(!is.null(dialect$rownum) && dialect$rownum!=0){
       rownames(table)<-seq(dialect$rownum,length.out=nrow(table))
     }
@@ -64,20 +67,26 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       table<- cbind("@id"=ids,table)
     }
     if(!is.null(metadata$tableSchema$columns)){
+      lapply(metadata$tableSchema$columns,function(x){
+        if(!is.null(x$aboutUrl)){
+          aboutUrl<-stri_replace_all_fixed(x$aboutUrl,paste0("{", c("_name",names(x)),"}"),c("#",""), c(x$name,x)),vectorize_all = F)
+          aboutUrl<-rep(x$aboutUrl,nrow(table))
+          tab_list[sapply(tab_list,function(x) x[,"@id"]==aboutUrl)]
+        }
+        #propertyName
+        #value
+        #aboutURl
+      })
       n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){
         if(!is.null(x$propertyUrl)){
-          s<-stri_replace_last_fixed(x$propertyUrl,names(x),x,vectorize_all = F)[1]
+          s<-stri_replace_all_fixed(x$propertyUrl,paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),paste(c("#",""),c(x$name,x),sep=""),vectorize_all = F)
           check_ns(s)
         }else if(!is.null(metadata$tableSchema$propertyUrl)){
-          s<-stri_replace_last_fixed(metadata$tableSchema$propertyUrl,names(x),x,vectorize_all = F)[1]
+          s<-stri_replace_all_fixed(metadata$tableSchema$propertyUrl,paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}"),apply(expand.grid(c("#",""), c(x$name,x)), 1, paste,collapse=""),vectorize_all = F)
           check_ns(s)
         }else{
           x$name
         }}))
-      n<-gsub("[{]#_",'#',n)
-      n<-gsub("[{]_",'',n)
-      n<-gsub("[{]",'',n)
-      n<-gsub("[}]",'',n)
       id_tag<-F
       if(colnames(table)[1]=="@id"){
         id<-table[,1]
@@ -86,6 +95,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       }
       table<-as.data.frame(lapply(seq(1,ncol(table)),format_column,table,metadata))
       colnames(table)<-n
+      #add here aboutUrl _row
       if(id_tag){
         table<-cbind("@id"=id,table)
       }
@@ -122,6 +132,8 @@ clean <-function(y){
 }
 
 format_column<-function(index,table,metadata){
+  print(colnames(table))
+  print(index)
   index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index] || y$title==colnames(table)[index]})
   if(length(metadata$tableSchema$columns[index])>0){
     datatype<-metadata$tableSchema$columns[index][[1]]$datatype
@@ -184,6 +196,9 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
     l<-lapply(metadata_f$tables,
               function(x){csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata,minimal=minimal)})
+    if(length(l)==0){
+      l<-csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),metadata_f$url,metadata),metadata,minimal=minimal)
+    }
     if(minimal){
       toJSON(sapply(l,fromJSON))
     }else{
