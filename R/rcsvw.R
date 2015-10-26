@@ -48,65 +48,39 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       header<-(dialect$header=="true")
     }
     table<-read.csv(text=getURL(url,.opts=curlOptions(followlocation=T)),check.names=F,stringsAsFactors = F,header=header)
-    ext_ref<-metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x)!is.null(x$valueUrl))]
-    virtual<-metadata$tableSchema$columns[sapply(metadata$tableSchema$columns,function(x) !is.null(x$virtual) && x$virtual==T)]
-    
-    lapply(virtual,function(x) {table<<-cbind(table,rep("",nrow(table)));names(table)[ncol(table)]<<-x$name;colnames(table)[ncol(table)]<<-x$name})
-    lapply(ext_ref,function(x){print(x); table[,x$name]<<-
-             sapply(table[,x$name], function(y){gsub("[{}]",'',stri_replace_last_fixed(x$valueUrl,x$name,y,vectorize_all = F)[1])})})
     if(!is.null(dialect$rownum) && dialect$rownum!=0){
       rownames(table)<-seq(dialect$rownum,length.out=nrow(table))
     }
-    if("aboutUrl" %in% names(metadata$tableSchema)){
-      m<-gregexpr("\\{[^:]+\\}",metadata$tableSchema$aboutUrl)
-      id<-gsub("\\{|\\}",'',regmatches(metadata$tableSchema$aboutUrl, m))
-      clean_id<-gsub("[#_]",'',id)
-      ids<-sapply(as.vector(table[[clean_id]]),
-                  function(x){paste(gsub(paste("\\{",id,"\\}",sep=""),paste(gsub(clean_id,'',id),x,sep=""),metadata$tableSchema$aboutUrl),sep="")}
-      )
-      table<- cbind("@id"=ids,table)
-    }
     if(!is.null(metadata$tableSchema$columns)){
+      #check that all columns from csv file are moved
+      #add _row, _name, _column, _sourcerow, _sourcecolumn
+      # add context
+      # compute name from title
       propertyUrl<-metadata$tableSchema$propertyUrl
       aboutUrl<-metadata$tableSchema$aboutUrl
       lapply(metadata$tableSchema$columns,function(x){
-        aboutUrl_col<-lapply(seq(1,nrow(table),function(x){
+        aboutUrl_col<-lapply(seq(1,nrow(table),function(x)
           stri_replace_all_fixed(ifelse(!is.null(x$aboutUrl,x$aboutUrl,aboutUrl),
                                                 paste0("{", c("_row"),"}"),x,
-                                         vectorize_all = F))
+                                         vectorize_all = F))))
         if(length(tab_list)==0 || length(tab_list[sapply(tab_list,function(x){x["@id",1]==aboutUrl_col[1]})])==0){
           tab_list<<-append(tab_list,data.frame("@id"=aboutUrl_col))
         }
         tab_index<-tab_list[sapply(tab_list,function(x){x["@id",1]==aboutUrl_col[1]})]
-        header_col<-stri_replace_all_fixed(ifelse(is.null(x$propertyUrl),propertyUrl,x$propertyUrl),
+        header_col<-check_ns(stri_replace_all_fixed(ifelse(is.null(x$propertyUrl),propertyUrl,x$propertyUrl),
                                            paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),
-                                           paste0(c("#",""),c(x$name,x)),vectorize_all = F)
-        #propertyName
-        #value
-        #aboutURl
-      })
-      n<-unlist(lapply(metadata$tableSchema$columns,FUN=function(x){
-        if(!is.null(x$propertyUrl)){
-          s<-stri_replace_all_fixed(x$propertyUrl,paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),paste(c("#",""),c(x$name,x),sep=""),vectorize_all = F)
-          check_ns(s)
-        }else if(!is.null(metadata$tableSchema$propertyUrl)){
-          s<-stri_replace_all_fixed(metadata$tableSchema$propertyUrl,paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}"),apply(expand.grid(c("#",""), c(x$name,x)), 1, paste,collapse=""),vectorize_all = F)
-          check_ns(s)
+                                           paste0(c("#",""),c(x$name,x)),vectorize_all = F))
+        if(!is.null(x$valueUrl)){
+          data_col<-rep(check_ns(stri_replace_all_fixed(ifelse(is.null(x$propertyUrl),propertyUrl,x$propertyUrl),
+                                              paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),
+                                              paste0(c("#",""),c(x$name,x)),vectorize_all = F)),nrow(table))
+        }else if(x$virtual){
+          data_col<-rep(nrow(table),NULL)
         }else{
-          x$name
-        }}))
-      id_tag<-F
-      if(colnames(table)[1]=="@id"){
-        id<-table[,1]
-        table<-table[,-1]
-        id_tag<-T
-      }
-      table<-as.data.frame(lapply(seq(1,ncol(table)),format_column,table,metadata))
-      colnames(table)<-n
-      #add here aboutUrl _row
-      if(id_tag){
-        table<-cbind("@id"=id,table)
-      }
+          data_col<-lapply(table[,x$name],format_column)
+        }
+        tab_list[[tab_index]]<<-cbind(tab_list[[tab_index]],structure(data.frame(data_col),names=header_col))
+      })
     }else{
       colnames(table)<-sapply(seq(1,ncol(table)),function(x)paste("_col.",x,sep=""))
     }
@@ -140,8 +114,6 @@ clean <-function(y){
 }
 
 format_column<-function(index,table,metadata){
-  print(colnames(table))
-  print(index)
   index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index] || y$title==colnames(table)[index]})
   if(length(metadata$tableSchema$columns[index])>0){
     datatype<-metadata$tableSchema$columns[index][[1]]$datatype
