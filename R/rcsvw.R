@@ -60,16 +60,16 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       aboutUrl<-metadata$tableSchema$aboutUrl
       lapply(metadata$tableSchema$columns,function(x){
         aboutUrl_col<-lapply(seq(1,nrow(table),function(x)
-          stri_replace_all_fixed(ifelse(!is.null(x$aboutUrl,x$aboutUrl,aboutUrl),
-                                                paste0("{", c("_row"),"}"),x,
-                                         vectorize_all = F))))
+          stri_replace_all_fixed(ifelse(!is.null(x$aboutUrl),x$aboutUrl,aboutUrl),
+                                                paste0("{", "_row","}",x),
+                                         vectorize_all = F)))
         if(length(tab_list)==0 || length(tab_list[sapply(tab_list,function(x){x["@id",1]==aboutUrl_col[1]})])==0){
           tab_list<<-append(tab_list,data.frame("@id"=aboutUrl_col))
         }
         tab_index<-tab_list[sapply(tab_list,function(x){x["@id",1]==aboutUrl_col[1]})]
         header_col<-check_ns(stri_replace_all_fixed(ifelse(is.null(x$propertyUrl),propertyUrl,x$propertyUrl),
                                            paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),
-                                           paste0(c("#",""),c(x$name,x)),vectorize_all = F))
+                                           paste0(c("#",""),c(ifelse(!is.null(x$name),x$name,URLencode(x$title)),x)),vectorize_all = F))
         if(!is.null(x$valueUrl)){
           data_col<-rep(check_ns(stri_replace_all_fixed(ifelse(is.null(x$propertyUrl),propertyUrl,x$propertyUrl),
                                               paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),
