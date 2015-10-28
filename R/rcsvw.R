@@ -52,10 +52,9 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       rownames(table)<-seq(dialect$rownum,length.out=nrow(table))
     }
     if(!is.null(metadata$tableSchema$columns)){
-      #check that all columns from csv file are moved
-      #add _row, _name, _column, _sourcerow, _sourcecolumn
       # add context
       # compute name from title
+      # primary key
       propertyUrl<-metadata$tableSchema$propertyUrl
       aboutUrl<-metadata$tableSchema$aboutUrl
       tab_list<-NULL
@@ -63,12 +62,13 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
         aboutUrl_col<<-lapply(seq(1,nrow(table)),function(y){
           stri_replace_all_fixed(ifelse(!is.null(x$aboutUrl),x$aboutUrl,aboutUrl),paste0("{", "_row","}"),y,vectorize_all = F)})
         if(is.null(tab_list)){
-          tab_list<<-list(structure(data.frame(unlist(aboutUrl_col)),names="@id"))
-        }else if (length(tab_list)==0 || length(tab_list[sapply(tab_list,function(x){tryCatch(x["@id",1]==aboutUrl_col[1],except=NULL)})])==0){
+          tab_list<<-list(structure(data.frame(unlist(aboutUrl_col),stringsAsFactors = F),names="@id"))
+        }else if (length(tab_list)==0 || length(tab_list[sapply(tab_list,function(x){tryCatch(x[1,"@id",]==aboutUrl_col[1],except=NULL)})])==0){
           tab_list<<-append(tab_list,data.frame("@id"=aboutUrl_col))
         }
         tryCatch(
-        tab_index<<-tab_list[sapply(tab_list,function(x){x["@id",1]==aboutUrl_col[1]})],
+          {
+        tab_index<<-tab_list[sapply(tab_list,function(x){x[1,"@id",]==aboutUrl_col[1]})]},
         except=tab_index<-NULL)
         header_col<-check_ns(stri_replace_all_fixed(ifelse(is.null(x$propertyUrl),propertyUrl,x$propertyUrl),
                                            paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),
@@ -78,14 +78,14 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
                                               paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),
                                               paste0(c("#",""),c(x$name,x)),vectorize_all = F)),nrow(table))
         }else if(length(x$virtual)>0 && x$virtual){
-          data_col<-rep(nrow(table),NULL)
+          data_col<<-rep(nrow(table),NULL)
         }else{
-          data_col<-lapply(ifelse(is.element(x$name,names(table)),table[,x$name],table[,x$title]),format_column,x$datatype)
+          data_col<<-lapply(ifelse(is.element(x$name,names(table)),table[,x$name],table[,x$title]),format_column,x$datatype)
         }
         if(is.null(tab_index)){
-          append(tab_list,structure(data.frame(data_col),names=header_col))
+          print(tab_list)
+          tab_list<<-append(tab_list,structure(data.frame(data_col),names=header_col))
         }else{
-          print(tab_index)
           tab_list[[tab_index]]<<-cbind(tab_list[[tab_index]],structure(data.frame(data_col),names=header_col)) 
         }
       })
