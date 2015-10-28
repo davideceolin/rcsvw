@@ -63,12 +63,12 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
         aboutUrl_col<<-lapply(seq(1,nrow(table)),function(y){
           stri_replace_all_fixed(ifelse(!is.null(x$aboutUrl),x$aboutUrl,aboutUrl),paste0("{", "_row","}"),y,vectorize_all = F)})
         if(is.null(tab_list)){
-          tab_list<<-list(data.frame("@id"=aboutUrl_col))
-        }else if (length(tab_list)==0 || length(tab_list[sapply(tab_list,function(x){trycatch(x["@id",1]==aboutUrl_col[1],except=NULL)})])==0){
+          tab_list<<-list(structure(data.frame(unlist(aboutUrl_col)),names="@id"))
+        }else if (length(tab_list)==0 || length(tab_list[sapply(tab_list,function(x){tryCatch(x["@id",1]==aboutUrl_col[1],except=NULL)})])==0){
           tab_list<<-append(tab_list,data.frame("@id"=aboutUrl_col))
         }
         tryCatch(
-        tab_index<-tab_list[sapply(tab_list,function(x){x["@id",1]==aboutUrl_col[1]})],
+        tab_index<<-tab_list[sapply(tab_list,function(x){x["@id",1]==aboutUrl_col[1]})],
         except=tab_index<-NULL)
         header_col<-check_ns(stri_replace_all_fixed(ifelse(is.null(x$propertyUrl),propertyUrl,x$propertyUrl),
                                            paste0("{",apply(expand.grid(c("#",""), c("_name",names(x))), 1, paste,collapse=""),"}",sep=""),
@@ -80,12 +80,12 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
         }else if(length(x$virtual)>0 && x$virtual){
           data_col<-rep(nrow(table),NULL)
         }else{
-          print(x)
-          data_col<-lapply(ifelse(is.element(x$name,names(table)),table[,x$name],table[,x$title]),format_column)
+          data_col<-lapply(ifelse(is.element(x$name,names(table)),table[,x$name],table[,x$title]),format_column,x$datatype)
         }
         if(is.null(tab_index)){
           append(tab_list,structure(data.frame(data_col),names=header_col))
         }else{
+          print(tab_index)
           tab_list[[tab_index]]<<-cbind(tab_list[[tab_index]],structure(data.frame(data_col),names=header_col)) 
         }
       })
@@ -121,27 +121,49 @@ clean <-function(y){
         y
 }
 
-format_column<-function(index,table,metadata){
-  index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index] || y$title==colnames(table)[index]})
-  if(length(metadata$tableSchema$columns[index])>0){
-    datatype<-metadata$tableSchema$columns[index][[1]]$datatype
+format_column<-function(column, datatype){
+  if(!is.null(datatype) && length(datatype)>0){
     if(!is.atomic(datatype) && datatype$base=="date"){
       R_format<-gsub("yyyy","Y",datatype$format,perl=TRUE)
       R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
       d<-lapply(table[,index],function(y) as.Date(y,format=R_format))
       R_format<-gsub("M","m",R_format,perl=TRUE)
-      unlist(lapply(table[,colnames(table)[index]],function(y) as.character(as.Date(y,format=R_format))))
+      unlist(lapply(column,function(y) as.character(as.Date(y,format=R_format))))
     }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
-      unlist(lapply(table[,colnames(table)[index]],as.character))
+      unlist(lapply(column,as.character))
     }else if(length(datatype)>0 && datatype == "number"){
-      table[,colnames(table)[index]]
+      column
     }else if(length(datatype)>0 && datatype == "integer"){
-      round(table[,colnames(table)[index]],0)
+      round(column,0)
     }else{
-      as.character(table[,colnames(table)[index]])
+      as.character(column)
     }
+  }else{
+    column
   }
 }
+
+# format_column<-function(index=NA,table,metadata=NA){
+#   index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index] || y$title==colnames(table)[index]})
+#   if(length(metadata$tableSchema$columns[index])>0){
+#     datatype<-metadata$tableSchema$columns[index][[1]]$datatype
+#     if(!is.atomic(datatype) && datatype$base=="date"){
+#       R_format<-gsub("yyyy","Y",datatype$format,perl=TRUE)
+#       R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
+#       d<-lapply(table[,index],function(y) as.Date(y,format=R_format))
+#       R_format<-gsub("M","m",R_format,perl=TRUE)
+#       unlist(lapply(table[,colnames(table)[index]],function(y) as.character(as.Date(y,format=R_format))))
+#     }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
+#       unlist(lapply(table[,colnames(table)[index]],as.character))
+#     }else if(length(datatype)>0 && datatype == "number"){
+#       table[,colnames(table)[index]]
+#     }else if(length(datatype)>0 && datatype == "integer"){
+#       round(table[,colnames(table)[index]],0)
+#     }else{
+#       as.character(table[,colnames(table)[index]])
+#     }
+#   }
+# }
 
 init<-function(minimal=F){
     store <<- new.rdf(FALSE)
