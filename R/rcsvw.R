@@ -75,26 +75,35 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       }
       lapply(metadata$tableSchema$columns,function(x,y){
         if(length(x$virtual)>0 && x$virtual){
-          col<-data.frame(sapply(seq(1,nrow(table)),function(y){stri_replace_all_fixed(x$valueUrl,
+          col<-sapply(seq(1,nrow(table)),function(y){
+            tmp<-stri_replace_all_fixed(x$valueUrl,
                   paste0("{",apply(expand.grid(c("#",""), c("_row")), 1, paste,collapse=""),"}",sep=""),
-                  paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)}))
+                  paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)
+            ifelse((grepl("http://",tmp[1]) || grepl(":",tmp[1])),tmp,gsub("##","#",paste0(context,tmp)))
+            })
+          col<-data.frame(col,stringsAsFactors = F)
           colnames(col)<-ifelse((length(y)>0 && y),gsub(" ","_",tolower(x)),x$name)
           table<<-cbind(table,col)
         }
         else if(!is.null(x$valueUrl)){
-          table[,x$name]<<-sapply(seq(1,nrow(table)),function(y){stri_replace_all_fixed(x$valueUrl,
+          table[,x$name]<<-sapply(seq(1,nrow(table)),function(y){
+            tmp<-stri_replace_all_fixed(x$valueUrl,
             paste0("{",apply(expand.grid(c("#",""), c("_row")), 1, paste,collapse=""),"}",sep=""),
-            paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)})
+            paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)
+            ifelse((grepl("http://",tmp[1])||grepl(":",tmp[1])),tmp,gsub("##","#",paste0(context,tmp)))
+            })
         }
       },metadata$dialect$trim)
       tab_list<-list()
       lapply(names(k),function(x){
         aboutUrl_col<<-sapply(seq(1,nrow(table)),function(y){
-          stri_replace_all_fixed(x,
+          tmp<-stri_replace_all_fixed(x,
               paste0("{",apply(expand.grid(c("#",""), c("_row")), 1, paste,collapse=""),"}",sep=""),
-              paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)})
+              paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)
+          ifelse(grepl(tmp[1],"http://"),tmp,gsub("##","#",paste0(context,tmp)))
+          })
         table_temp<-NULL
-        table_temp<-cbind(aboutUrl_col,data.frame(table[unlist(k[x])]))
+        table_temp<-cbind(aboutUrl_col,data.frame(table[unlist(k[x])],stringsAsFactors = F),stringsAsFactors=F)
         colnames(table_temp)[1]<-"@id"
         tab_list[[length(tab_list)+1]]<<-table_temp
       })
@@ -152,28 +161,6 @@ format_column<-function(column, datatype){
   }
 }
 
-# format_column<-function(index=NA,table,metadata=NA){
-#   index<-sapply(metadata$tableSchema$columns,function(y){y$name==colnames(table)[index] || y$title==colnames(table)[index]})
-#   if(length(metadata$tableSchema$columns[index])>0){
-#     datatype<-metadata$tableSchema$columns[index][[1]]$datatype
-#     if(!is.atomic(datatype) && datatype$base=="date"){
-#       R_format<-gsub("yyyy","Y",datatype$format,perl=TRUE)
-#       R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
-#       d<-lapply(table[,index],function(y) as.Date(y,format=R_format))
-#       R_format<-gsub("M","m",R_format,perl=TRUE)
-#       unlist(lapply(table[,colnames(table)[index]],function(y) as.character(as.Date(y,format=R_format))))
-#     }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
-#       unlist(lapply(table[,colnames(table)[index]],as.character))
-#     }else if(length(datatype)>0 && datatype == "number"){
-#       table[,colnames(table)[index]]
-#     }else if(length(datatype)>0 && datatype == "integer"){
-#       round(table[,colnames(table)[index]],0)
-#     }else{
-#       as.character(table[,colnames(table)[index]])
-#     }
-#   }
-# }
-
 init<-function(minimal=F){
     store <<- new.rdf(FALSE)
     if(!minimal){
@@ -199,18 +186,10 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
     tb<-Tabular(url,metadata,link_header)
     if("@id" %in% colnames(tb@tables[[1]])){
       tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x){ 
-        if(grepl("http://",x)){
-          x
-        }else{
-          paste(url,x,sep="")
-        }
+        ifelse(grepl("http://",x),x,paste(url,x,sep=""))
       })}
-    tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header)
-    if(minimal){
-      toJSON(sapply(tb1,function(x)x$describes))
-    }else{
-      toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1))))) 
-    }
+    tb1<-lapply(rownames(tb@tables[[1]]),row2json,tb@url,tb@tables[[1]],tb@header,tb@tables)
+    ifelse(minimal,toJSON(sapply(tb1,function(x)x$describes)),toJSON(list(tables=list(c(list(url=tb@url),tb@meta,list(row=tb1))))))
   }else{
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
     l<-lapply(metadata_f$tables,
@@ -218,19 +197,23 @@ csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
     if(length(l)==0){
       l<-csv2json(gsub(tail(unlist(strsplit(metadata,"/")),n=1),metadata_f$url,metadata),metadata,minimal=minimal)
     }
-    if(minimal){
-      toJSON(sapply(l,fromJSON))
-    }else{
-      toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]])))
-    }
+    ifelse(minimal,toJSON(sapply(l,fromJSON)),toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]]))))
   }
 }
 
-row2json<-function(index,url,data,header){
-  row = data[index,][,!is.na(data[index,])]
+row2json<-function(index,url,data,header,tables){
+  row <- data[index,][,!is.na(data[index,])]
+  l<-list(as.list(data.frame(row,check.names=F,stringsAsFactors = F)))
+  lapply(names(l[[1]])[-1],function(y) {
+    t<-tables[sapply(tables,function(x){l[[1]][y] %in% x[,"@id"]})]
+    if(!is.null(t) && length(t)>0){
+      l_tmp<-t[[1]][t[[1]]$"@id"==l[[1]][y],]
+      l[[1]][[y]]<<-l_tmp
+    }
+  })
   list(url=paste(url,"#row=",strtoi(index)+header,sep=""),
        rownum=strtoi(index),
-       describes=list(as.list(data.frame(row,check.names=F))))
+       describes=l)
 }
 
 csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="store",tg=NULL,init=T){
@@ -273,7 +256,6 @@ csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="stor
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
     lapply(metadata_f$tables,
            function(x){csv2rdf(url=gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata=metadata,tg=tg,minimal=minimal,init=F)})
-    #toJSON(list(tables=lapply(seq(1,length(l)),function(x)fromJSON(l[[x]])$tables[[1]])))
     if(output=="text"){
       dump.rdf(store)
     }else if(output=="file"){
