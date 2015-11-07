@@ -90,8 +90,8 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
         if(length(x$virtual)>0 && x$virtual){
           col<-sapply(seq(1,nrow(table)),function(y){
             tmp<-stri_replace_all_fixed(x$valueUrl,
-                  paste0("{",apply(expand.grid(c("#",""), c("_row")), 1, paste,collapse=""),"}",sep=""),
-                  paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)
+                  paste0("{",apply(expand.grid(c("#",""), c("_row",colnames(table))), 1, paste,collapse=""),"}",sep=""),
+                  paste0(apply(expand.grid(c("#",""), c(y,table[y,])), 1, paste,collapse="")),vectorize_all = F)
             ifelse((grepl("http://",tmp[1]) || grepl(":",tmp[1])),tmp,gsub("##","#",paste0(context,tmp)))
             })
           col<-data.frame(col,stringsAsFactors = F,check.names = F)
@@ -101,8 +101,8 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
         else if(!is.null(x$valueUrl)){
           table[,x$name]<<-sapply(seq(1,nrow(table)),function(y){
             tmp<-stri_replace_all_fixed(x$valueUrl,
-            paste0("{",apply(expand.grid(c("#",""), c("_row")), 1, paste,collapse=""),"}",sep=""),
-            paste0(apply(expand.grid(c("#",""), c(y)), 1, paste,collapse="")),vectorize_all = F)
+            paste0("{",apply(expand.grid(c("#",""), c("_row",colnames(table))), 1, paste,collapse=""),"}",sep=""),
+            paste0(apply(expand.grid(c("#",""), c(y,table[y,])), 1, paste,collapse="")),vectorize_all = F)
             ifelse((grepl("http://",tmp[1])||grepl(":",tmp[1])),tmp,gsub("##","#",paste0(context,tmp)))
             })
         }
@@ -121,14 +121,16 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
           #print(x)
           #print(z)
           meta_col<-columns[sapply(columns,function(y){(y$name==z || y$titles == z)})][[1]]
-          #print("meta_col::")
-          #print(meta_col)
-          #print("ok")
-          if(!is.null(meta_col$propertyUrl) && length(meta_col$propertyUrl)>0){
-            tmp<-stri_replace_all_fixed(meta_col$propertyUrl,
-                paste0("{",apply(expand.grid(c("#",""), c("_col")), 1, paste,collapse=""),"}",sep=""),
-                paste0(apply(expand.grid(c("#",""), which(colnames(table)==meta_col$name)), 1, paste,collapse="")),vectorize_all = F)
-            ifelse((grepl("http://",tmp[1])||grepl(":",tmp[1])),tmp,gsub("##","#",paste0(context,tmp)))
+          if("propertyUrl" %in% names(meta_col)){
+            propUrl<-meta_col$propertyUrl
+          }else{
+            propUrl<-propertyUrl
+          }
+          if(!is.null(propUrl) && length(propUrl)>0){
+            tmp<-stri_replace_all_fixed(propUrl,
+                paste0("{",apply(expand.grid(c("#",""), c("_col","_name")), 1, paste,collapse=""),"}",sep=""),
+                paste0(apply(expand.grid(c("#",""), c(which(colnames(table)==meta_col$name),z)), 1, paste,collapse="")),vectorize_all = F)
+            check_ns(ifelse((grepl("http://",tmp[1])||grepl(":",tmp[1])),tmp,gsub("##","#",paste0(context,tmp))))
           }else if(!is.null(meta_col$name) || !is.null(meta_col$titles)){
             ifelse(!is.null(meta_col$name),meta_col$name,URLencode(meta_col$titles))
           }else{
