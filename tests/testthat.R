@@ -202,12 +202,12 @@ test_that("test014json", {
 #   record_test("test014","/Users/dceolin/Desktop/test.ttl")
 # })
 # 
-# test_that("test015json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test015/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test015/user-metadata.json"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test015/result.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
-# 
+test_that("test015json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test015/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test015/user-metadata.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test015/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
 # test_that("test015rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test015/tree-ops.csv", metadata="http://www.w3.org/2013/csvw/tests/test015/user-metadata.json")
 #   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test015/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
@@ -215,12 +215,12 @@ test_that("test014json", {
 #   record_test("test015","/Users/dceolin/Desktop/test.ttl")
 # })
 # 
-# test_that("test016json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test016/tree-ops.csv",link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"'))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test016/result.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
-# 
+test_that("test016json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test016/tree-ops.csv",link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"'))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test016/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
 # test_that("test016rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test016/tree-ops.csv", link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"')
 #   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test016/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
@@ -228,12 +228,12 @@ test_that("test014json", {
 #   record_test("test016","/Users/dceolin/Desktop/test.ttl")
 # })
 # 
-# test_that("test017json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test017/tree-ops.csv"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test017/result.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
-# 
+test_that("test017json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test017/tree-ops.csv"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test017/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
 # test_that("test017rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test017/tree-ops.csv")
 #   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test017/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
@@ -241,11 +241,11 @@ test_that("test014json", {
 #   record_test("test017","/Users/dceolin/Desktop/test.ttl")
 # })
 # 
-# test_that("test018json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test018/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test018/user-metadata.json"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test018/result.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
+test_that("test018json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test018/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test018/user-metadata.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test018/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
 # 
 # test_that("test018rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test018/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test018/user-metadata.json")
@@ -254,11 +254,11 @@ test_that("test014json", {
 #   record_test("test018","/Users/dceolin/Desktop/test.ttl")
 # })
 # 
-# test_that("test023json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test023-user-metadata.json"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test023.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
+test_that("test023json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test023-user-metadata.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test023.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
 # 
 # test_that("test023rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test023-user-metadata.json")
@@ -267,11 +267,11 @@ test_that("test014json", {
 #   record_test("test023","/Users/dceolin/Desktop/test.ttl")
 # })
 #  
-# test_that("test027json", {
-#    s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test027-user-metadata.json",minimal=T))
-#    s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test027.json",.opts=curlOptions(followlocation=TRUE)))             
-#    expect_equal(s1,s2)
-# })
+test_that("test027json", {
+   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test027-user-metadata.json",minimal=T))
+   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test027.json",.opts=curlOptions(followlocation=TRUE)))             
+   expect_equal(s1,s2)
+})
 # 
 # test_that("test027rdf", {
 #  s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/tree-ops.csv",metadata="http://www.w3.org/2013/csvw/tests/test027-user-metadata.json",minimal=T)
@@ -280,11 +280,11 @@ test_that("test014json", {
 #  record_test("test027","/Users/dceolin/Desktop/test.ttl")
 # })
 #  
-# test_that("test028json", {
-#  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/countries.csv"))
-#  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test028.json",.opts=curlOptions(followlocation=TRUE)))             
-#  expect_equal(s1,s2)
-# })
+test_that("test028json", {
+ s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/countries.csv"))
+ s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test028.json",.opts=curlOptions(followlocation=TRUE)))             
+ expect_equal(s1,s2)
+})
 #  
 #  test_that("test028rdf", {
 #    s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/countries.csv")
@@ -293,11 +293,11 @@ test_that("test014json", {
 #    record_test("test028","/Users/dceolin/Desktop/test.ttl")
 #  }) 
 # 
-#  test_that("test029json", {
-#    s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/countries.csv",minimal=T))
-#    s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test029.json",.opts=curlOptions(followlocation=TRUE)))             
-#    expect_equal(s1,s2)
-#  })
+ test_that("test029json", {
+   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/countries.csv",minimal=T))
+   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test029.json",.opts=curlOptions(followlocation=TRUE)))             
+   expect_equal(s1,s2)
+ })
 #  
 #  test_that("test029rdf", {
 #    s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/countries.csv",minimal=T)
@@ -306,11 +306,11 @@ test_that("test014json", {
 #    record_test("test029","/Users/dceolin/Desktop/test.ttl")
 #  }) 
 # 
-# test_that("test030json", {
-#   s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/countries.json"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test030.json",.opts=curlOptions(followlocation=TRUE)))             
-#   expect_equal(s1,s2)
-#   })
+test_that("test030json", {
+  s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/countries.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test030.json",.opts=curlOptions(followlocation=TRUE)))             
+  expect_equal(s1,s2)
+  })
 # 
 # test_that("test030rdf", {
 #   s1 <- csv2rdf(metadata="http://www.w3.org/2013/csvw/tests/countries.json")
@@ -319,11 +319,11 @@ test_that("test014json", {
 #   record_test("test030","/Users/dceolin/Desktop/test.ttl")
 # }) 
 # 
-# test_that("test031json", {
-#   s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/countries.json",minimal=T))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test031.json",.opts=curlOptions(followlocation=TRUE)))             
-#   expect_equal(s1,s2)
-# })
+test_that("test031json", {
+  s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/countries.json",minimal=T))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test031.json",.opts=curlOptions(followlocation=TRUE)))             
+  expect_equal(s1,s2)
+})
 # 
 # test_that("test031rdf", {
 #   s1 <- csv2rdf(metadata="http://www.w3.org/2013/csvw/tests/countries.json",minimal=T)

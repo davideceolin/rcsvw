@@ -143,6 +143,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       })
     }else{
       colnames(table)<-sapply(seq(1,ncol(table)),function(x)paste("_col.",x,sep=""))
+      tab_list<-list(table)
     }
     meta<-clean(metadata[names(metadata)[grepl(":", names(metadata))]])
   }else{
