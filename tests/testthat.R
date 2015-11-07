@@ -26,7 +26,7 @@ init_test<-function(){
   add.triple(store,rcsvw,create.property(store,"dc:creator"),me)
   add.triple(store,me,rdf_type,create.resource(store,"earl:Assertor"))
   add.triple(store,me,rdf_type,create.resource(store,"foaf:Person"))
-  add.triple(store,me,create.property(store,"foaf:name"),"Davide Ceolin")
+  add.triple(store,me,create.property(store,"foaf:name"),"\"Davide Ceolin\"")
   add.triple(store,me,create.property(store,"foaf:title"),"Implementor")
   add.triple(store,me,create.property(store,"foaf:homepage"),create.resource(store,"http://trustingwebdata.org/davide.html"))
   save.rdf(store,"/Users/dceolin/Desktop/test.ttl",format="TURTLE")
@@ -162,39 +162,39 @@ test_that("test011json", {
 #   expect_equal(s1,s2)
 #   record_test("test011","/Users/dceolin/Desktop/test.ttl")
 # })
-# 
-# test_that("test012json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test012/tree-ops.csv"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test012/result.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
-# 
+
+test_that("test012json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test012/tree-ops.csv"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test012/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
 # test_that("test012rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test012/tree-ops.csv")
 #   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test012/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
 #   expect_equal(s1,s2)
 #   record_test("test012","/Users/dceolin/Desktop/test.ttl")
 # })
-# 
-# test_that("test013json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/tree-ops.csv","http://www.w3.org/2013/csvw/tests/test013-user-metadata.json"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test013.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
-# 
+
+test_that("test013json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/tree-ops.csv","http://www.w3.org/2013/csvw/tests/test013-user-metadata.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test013.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
 # test_that("test013rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/tree-ops.csv","http://www.w3.org/2013/csvw/tests/test013-user-metadata.json")
 #   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test013.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
 #   expect_equal(s1,s2)
 #   record_test("test013","/Users/dceolin/Desktop/test.ttl")
 # })
-# 
-# test_that("test014json", {
-#   s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test014/tree-ops.csv",link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"'))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test014/result.json",.opts=curlOptions(followlocation=TRUE)))           
-#   expect_equal(s1,s2)
-# })
-# 
+
+test_that("test014json", {
+  s1 <- fromJSON(csv2json("http://www.w3.org/2013/csvw/tests/test014/tree-ops.csv",link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"'))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test014/result.json",.opts=curlOptions(followlocation=TRUE)))           
+  expect_equal(s1,s2)
+})
+
 # test_that("test014rdf", {
 #   s1 <- csv2rdf("http://www.w3.org/2013/csvw/tests/test014/tree-ops.csv",link_header = '<linked-metadata.json>; rel="describedby"; type="application/csvm+json"')
 #   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test014/result.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
