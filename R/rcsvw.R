@@ -58,11 +58,17 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
       rownames(table)<-seq(dialect$rownum,length.out=nrow(table))
     }
     if(!is.null(metadata$tableSchema$columns)){
-      lapply(metadata$tableSchema$columns,function(x){
-        i<-which(colnames(table)==x$name)
-        i<-ifelse(length(i)>0,i,which(colnames(table)==x$titles))
-        if(length(i)>0) table[,i]<<-format_column(table[,i],x$datatype)
-      })
+      propertyUrl<-metadata$tableSchema$propertyUrl
+      aboutUrl<-metadata$tableSchema$aboutUrl
+      columns<-metadata$tableSchema$columns
+      lapply(columns,function(x){
+        if(is.null(x$virtual) || !x$virtual){
+          i<-which(colnames(table)==x$name)
+          i<-ifelse(length(i)>0,i,which(colnames(table) %in% x$titles))
+          if(length(i)>0) table[,i]<<-format_column(table[,i],x$datatype)
+          }
+        })
+      
       # compute name from title
       propertyUrl<-metadata$tableSchema$propertyUrl
       aboutUrl<-metadata$tableSchema$aboutUrl
@@ -97,6 +103,7 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
           col<-data.frame(col,stringsAsFactors = F,check.names = F)
           colnames(col)<-ifelse((length(y)>0 && y),gsub(" ","_",tolower(x)),x$name)
           table<<-cbind(table,col)
+          #print(table)
         }
         else if(!is.null(x$valueUrl)){
           table[,x$name]<<-sapply(seq(1,nrow(table)),function(y){
@@ -117,15 +124,22 @@ Tabular<-function(url=NA,metadata_param=NULL,link_header=NULL){
           })
         table_temp<-NULL
         table_temp<-data.frame(table[,unlist(k[names(k)==x])],stringsAsFactors = F,check.names = F)
+        #print(table_temp)
         colnames(table_temp)<-sapply(colnames(table_temp),function(z){
           #print(x)
           #print(z)
-          meta_col<-columns[sapply(columns,function(y){(y$name==z || y$titles == z)})][[1]]
+          meta_col<-columns[sapply(columns,function(y){(y$name==z || z %in% y$titles)})][[1]]
           if("propertyUrl" %in% names(meta_col)){
             propUrl<-meta_col$propertyUrl
           }else{
             propUrl<-propertyUrl
           }
+#           print("z::")
+#           print(z)
+#           print("titles::")
+#           print(y$titles)
+#           print("propUrl::")
+#           print(propUrl)
           if(!is.null(propUrl) && length(propUrl)>0){
             tmp<-stri_replace_all_fixed(propUrl,
                 paste0("{",apply(expand.grid(c("#",""), c("_col","_name")), 1, paste,collapse=""),"}",sep=""),
@@ -175,11 +189,21 @@ clean <-function(x){
 
 format_column<-function(column, datatype){
   if(!is.null(datatype) && length(datatype)>0){
-    if(!is.atomic(datatype) && datatype$base=="date"){
+    if(!is.atomic(datatype) && (datatype$base=="date" || datatype$base=="datetime")){
       R_format<-gsub("yyyy","Y",datatype$format,perl=TRUE)
-      R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
-      R_format<-gsub("M","m",R_format,perl=TRUE)
-      unlist(lapply(column,function(y) as.character(as.Date(y,format=R_format))))
+      if(datatype$base=="datetime"){
+        R_format<-strsplit(R_format,"T")[[1]]
+        R_format[1]<-gsub("([[:alpha:]])+","%\\1",R_format[1],perl=TRUE)
+        R_format[2]<-gsub("([[:alpha:]])+","%\\1",R_format[2],perl=TRUE)
+        R_format[1]<-gsub("%M","%m",R_format[1],perl=TRUE)
+        R_format[2]<-gsub("%m","%M",R_format[2],perl=TRUE)
+        R_format<-paste(R_format[1],"T",R_format[2])
+        unlist(lapply(column,function(y) format(strptime(y,format=R_format),format="%Y-%m-%dT%H:%M:%S")))
+      }else{
+        R_format<-gsub("M","m",R_format,perl=TRUE)
+        R_format<-gsub("([[:alpha:]])+","%\\1",R_format,perl=TRUE)
+        unlist(lapply(column,function(y) as.character(as.Date(y,format=R_format))))  
+      }
     }else if(length(datatype)>0 && datatype %in% c("string","gYear")){
       unlist(lapply(column,as.character))
     }else if(length(datatype)>0 && datatype == "number"){

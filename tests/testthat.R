@@ -327,13 +327,13 @@ test_that("test031json", {
 # 
 # test_that("test031rdf", {
 #   s1 <- csv2rdf(metadata="http://www.w3.org/2013/csvw/tests/countries.json",minimal=T)
-#   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test030.ttl",.opts=curlOptions(followlocation=TRUE)),format="TURTLE")           
+#   s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test030.ttl",.opts=curlOptions(followlocation=TRUE),.encoding='UTF-8')),format="TURTLE")           
 #   expect_equal(s1,s2)
 #   record_test("test031","/Users/dceolin/Desktop/test.ttl")
 # }) 
 
-# test_that("test032json", {
-#   s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/test032/csv-metadata.json"))
-#   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test032/result.json",.opts=curlOptions(followlocation=TRUE)))             
-#   expect_equal(s1,s2)
-# })
+test_that("test032json", {
+  s1 <- fromJSON(csv2json(metadata="http://www.w3.org/2013/csvw/tests/test032/csv-metadata.json"))
+  s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test032/result.json",.opts=curlOptions(followlocation=TRUE),.encoding='UTF-8'))             
+  expect_equal(s1,s2)
+})
