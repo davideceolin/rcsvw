@@ -241,7 +241,6 @@ init<-function(minimal=F){
 csv2json<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F){
   if(!is.null(url)){
     tb<-Tabular(url,metadata,link_header)
-    #print(tb)
     if("@id" %in% colnames(tb@tables[[1]])){ 
       tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x)ifelse(grepl("http://",x),x,paste(url,x,sep="")))
     }
@@ -277,9 +276,10 @@ csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="stor
   if(!is.null(url)){
     if(init) init()
     tb<-Tabular(url,metadata,link_header)
-    tb@url <- tail(unlist(strsplit(url,"/")),n=1)
     if(!minimal){
-      if("@id" %in% colnames(tb@tables[[1]])){tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) paste(url,x,sep=""))}
+      if("@id" %in% colnames(tb@tables[[1]])){
+        tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) ifelse(grepl("http://",x),x,paste(url,x,sep="")))
+      }
       add.prefix(store,prefix="",namespace=paste(tb@url,"#",sep=""))
       if(is.null(tg)) {
         tg <- create.blankNode(store)
