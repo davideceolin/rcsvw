@@ -335,3 +335,10 @@ test_that("test032json", {
   s2 <- fromJSON(getURL("http://www.w3.org/2013/csvw/tests/test032/result.json",.opts=curlOptions(followlocation=TRUE),.encoding='UTF-8'))             
   expect_equal(s1,s2)
 })
+
+test_that("test032rdf", {
+  s1 <- csv2rdf(metadata="http://www.w3.org/2013/csvw/tests/test032/csv-metadata.json")
+  s2 <- fromString.rdf(getURL("http://www.w3.org/2013/csvw/tests/test032/result.ttl",.opts=curlOptions(followlocation=TRUE),.encoding='UTF-8'),format="TURTLE")           
+  expect_equal(s1,s2)
+  record_test("test032","/Users/dceolin/Desktop/test.ttl")
+}) 

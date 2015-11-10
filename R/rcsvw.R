@@ -277,9 +277,11 @@ csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="stor
     if(init) init()
     tb<-Tabular(url,metadata,link_header)
     if(!minimal){
-      if("@id" %in% colnames(tb@tables[[1]])){
-        tb@tables[[1]][,"@id"]<-sapply(as.vector(tb@tables[[1]][,"@id"]),function(x) ifelse(grepl("http://",x),x,paste(url,x,sep="")))
+      lapply(tb@tables,function(x){
+      if("@id" %in% colnames(x)){
+        x[,"@id"]<-sapply(as.vector(x[,"@id"]),function(y) ifelse(grepl("http://",y),y,paste(url,y,sep="")))
       }
+      })
       add.prefix(store,prefix="",namespace=paste(tb@url,"#",sep=""))
       if(is.null(tg)) {
         tg <- create.blankNode(store)
@@ -290,7 +292,8 @@ csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="stor
       add.triple(store,tb1,rdf_type,csvw_Table)
       add.triple(store,tb1,csvw_url,tb@url)
     }
-    lapply(rownames(tb@tables[[1]]),row2rdf,tb@url,tb@tables[[1]],tb1,tb@header,minimal)
+    lapply(rownames(tb@tables[[1]]),row2rdf,tb@url,tb@tables,tb1,tb@header,minimal)
+    print(store)
     if(output=="text"){
       dump.rdf(store)
     }else if(output=="file"){
@@ -311,8 +314,14 @@ csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="stor
       init(T)
     }
     metadata_f<-fromJSON(getURL(metadata,.opts=curlOptions(followlocation=TRUE)))
+    if("tables" %in% names(metadata_f)){
     lapply(metadata_f$tables,
-           function(x){csv2rdf(url=gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata=metadata,tg=tg,minimal=minimal,init=F)})
+           function(x){
+             csv2rdf(url=gsub(tail(unlist(strsplit(metadata,"/")),n=1),x$url,metadata),metadata=metadata,tg=tg,minimal=minimal,init=F)
+             })
+    }else{
+      csv2rdf(url=gsub(tail(unlist(strsplit(metadata,"/")),n=1),metadata_f$url,metadata),metadata=metadata,tg=tg,minimal=minimal,init=F)
+    }
     if(output=="text"){
       dump.rdf(store)
     }else if(output=="file"){
@@ -326,22 +335,25 @@ csv2rdf<-function(url=NULL,metadata=NULL,link_header=NULL,minimal=F,output="stor
   }
 }
 
-row2rdf<-function(index,url,data,tb,header,minimal=F){
-  row = data[index,][,!is.na(data[index,])]
-  if("@id" %in% colnames(row)){
-    desc <- create.resource(store,as.character(row[1]))
-  }else{
-    desc <- create.blankNode(store)
-  }
-  if(!minimal){
-    rowrdf <- create.blankNode(store)
-    add.triple(store,rowrdf,rdf_type,csvw_Row)
-    add.triple(store,rowrdf,csvw_describes,desc)
-    add.triple(store,rowrdf,csvw_rownum,index)
-    add.triple(store,rowrdf,csvw_url,paste(url,"#row=",strtoi(index)+header,sep=""))
-    add.triple(store,tb,csvw_row,rowrdf)
-  }
-  lapply(seq(1,ncol(data)),rowdescribesrdf,data,index,desc,url,minimal)
+row2rdf<-function(index,url,tables,tb,header,minimal=F){
+  print("ok")
+  lapply(tables,function(data){
+    row = data[index,][,!is.na(data[index,])]
+    if("@id" %in% colnames(row)){
+      desc <- create.resource(store,as.character(row[1]))
+    }else{
+      desc <- create.blankNode(store)
+    }
+    if(!minimal){
+      rowrdf <- create.blankNode(store)
+      add.triple(store,rowrdf,rdf_type,csvw_Row)
+      add.triple(store,rowrdf,csvw_describes,desc)
+      add.triple(store,rowrdf,csvw_rownum,index)
+      add.triple(store,rowrdf,csvw_url,paste(url,"#row=",strtoi(index)+header,sep=""))
+      add.triple(store,tb,csvw_row,rowrdf)
+    }
+    lapply(seq(1,ncol(data)),rowdescribesrdf,data,index,desc,url,minimal)
+    })
 }
 
 rowdescribesrdf <- function(i,data,index,desc,url,minimal){
